@@ -212,7 +212,8 @@ ENV/
 /site
 
 # End of https://www.gitignore.io/api/macos,linux,django,python,pycharm
-node_modules/
 patient-health/.next
-
 patient-health/next-env.d.ts
+patient-health/node_modules
+/node_modules
+
