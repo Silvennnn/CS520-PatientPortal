@@ -57,9 +57,9 @@ export default function Home() {
 
             <div className="relative min-h-screen">
                 <div className="mx-auto max-w-7xl">
-                    <div className="relative z-10 pt-14 lg:w-full lg:max-w-2xl">
+                    <div className="relative z-10 pt-14 lg:w-full lg:max-w-4xl">
                         <svg
-                            className="absolute inset-y-0 right-8 hidden h-full w-80 translate-x-1/2 transform fill-white lg:block"
+                            className="absolute inset-y-0 right-[260px] hidden h-full w-80 translate-x-1/2 transform fill-white lg:block"
                             viewBox="0 0 100 100"
                             preserveAspectRatio="none"
                             aria-hidden="true"
@@ -67,7 +67,7 @@ export default function Home() {
                             <polygon points="0,0 90,0 50,100 0,100" />
                         </svg>
 
-                        <div className="relative px-6 py-32 sm:py-40 lg:px-8 lg:py-56 lg:pr-0">
+                        <div className="relative px-6 py-32 sm:py-40 lg:px-1 lg:py-56 lg:pr-0">
                             <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl">
                                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
                                     Looking for your patient portal?
@@ -87,7 +87,7 @@ export default function Home() {
                                     </Link>
                                 </div>
 
-                                <div className="mt-10 text-lg leading-8 text-gray-600">
+                                <div className="mt-20 text-lg leading-8 text-gray-600">
                                     PatientHealth, the free app that allows you to:
                                     <ul className="list-disc">
                                         <li>Access your patient profile anytime, anywhere</li>
