@@ -1,4 +1,4 @@
-export default function Example() {
+export default function Login() {
     return (
         <>
             {/*
@@ -102,7 +102,7 @@ export default function Example() {
 
                     <p className="mt-10 text-center text-sm text-gray-500">
                         Not a member?{' '}
-                        <a href="#" className="font-semibold leading-6 text-teal-600 hover:text-teal-500">
+                        <a href="/register" className="font-semibold leading-6 text-teal-600 hover:text-teal-500">
                             Register today!
                         </a>
                     </p>
