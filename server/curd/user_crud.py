@@ -9,19 +9,19 @@ from fastapi import HTTPException
 logger = logging.getLogger(__name__)
 
 
-def create_user(db: Session, create_user: CreateUserSchemas):
-    new_user = create_user.dict()
-    new_user["account_name"] = str(create_user.account_name)
-    new_user["hashed_password"] = create_user.password
-    if create_user.account_type != 0 and create_user.account_type != 1:
+def create_user(db: Session, create_user_schemas: CreateUserSchemas):
+    new_user = create_user_schemas.dict()
+    new_user["account_name"] = str(create_user_schemas.account_name)
+    new_user["hashed_password"] = create_user_schemas.password
+    if create_user_schemas.account_type != 0 and create_user_schemas.account_type != 1:
         raise HTTPException(
             status_code=406,
             detail="Unacceptable user role",
         )
-    new_user["account_type"] = create_user.account_type
-    new_user["last_name"] = str(create_user.last_name)
-    new_user["first_name"] = str(create_user.first_name)
-    db.add(new_user)
+    new_user["account_type"] = create_user_schemas.account_type
+    new_user["last_name"] = str(create_user_schemas.last_name)
+    new_user["first_name"] = str(create_user_schemas.first_name)
+    logging.info(new_user)
     db.add(new_user)
     try:
         db.commit()
@@ -30,4 +30,3 @@ def create_user(db: Session, create_user: CreateUserSchemas):
         print(e)
         # raise utils.DatabaseCommitError(e)
         return None
-    print("successfully")

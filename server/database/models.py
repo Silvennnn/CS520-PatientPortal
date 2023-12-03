@@ -22,7 +22,6 @@ from sqlalchemy.sql.sqltypes import (
 
 Base = declarative_base()
 
-
 class User(Base):
     __tablename__ = "user"
     account_name = Column(VARCHAR(16), nullable=False, unique=True)

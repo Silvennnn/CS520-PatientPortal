@@ -1,21 +1,11 @@
-from sqlalchemy import create_engine, String, Column, URL
+from sqlalchemy import create_engine, String, Column
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-host = os.environ.get("host")
-port = os.environ.get("port")
-username = os.environ.get("username")
-dbname = os.environ.get("dbname")
-password = os.environ.get("password")
-DATABASE_URL = URL.create(
-    "postgresql",
-    username=username,
-    password=password,  # plain (unescaped) text
-    host=host,
-    database=dbname,
-)
 engine = create_engine(DATABASE_URL)
+engine.connect()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
