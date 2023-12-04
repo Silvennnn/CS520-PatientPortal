@@ -1,17 +1,15 @@
-import logging
-
-from sqlalchemy.orm import Session
-from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
-from server.database.models import User, Appointment, MedicalRecord
 from typing import List
-from server.utils.security import get_password_hash
-from fastapi import HTTPException
-from server.utils.security import verify_password
-from jose import jwt, JWTError
-from server.utils.config import settings
 from uuid import UUID
-from pydantic.tools import parse_obj_as
+
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import Session
+
+from server.api.api_utils import get_user_by_token
+from server.database.models import User, Appointment, MedicalRecord
+from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
+from server.utils.security import get_password_hash
+from server.utils.security import verify_password
 
 
 class UserCRUD:
@@ -60,21 +58,8 @@ class UserCRUD:
             raise HTTPException(status_code=401, detail="Incorrect password")
         return user
 
-    def get_user_by_token(self, db: Session, token: str) -> User:
-        try:
-            payload = jwt.decode(token, "secret", algorithms=[settings.JWT_ALGORITHM])
-            user_uuid: UUID = payload.get("sub")
-            if user_uuid is None or isinstance(user_uuid, UUID):
-                raise HTTPException(status_code=401, detail="Unable to verify token")
-        except JWTError:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
-        user = self.get_user_by_uuid(db, user_uuid)
-        return user
-
     def get_user_by_uuid_and_token(self, db: Session, token: str, uuid: UUID):
-        current_user = self.get_user_by_token(db=db, token=token)
-        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
+        current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
         if current_user.account_type == 0 and current_user.user_uuid != uuid:
             raise HTTPException(
@@ -106,11 +91,7 @@ class UserCRUD:
     def get_user_by_account_name_and_token(
         self, db: Session, token: str, account_name: str
     ):
-        current_user = self.get_user_by_token(db=db, token=token)
-        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
-        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
+        current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
         current_account_name = current_user.account_name
         if current_user.account_type == 0 and current_account_name != account_name:
@@ -160,10 +141,7 @@ class UserCRUD:
     def update_user_info(
         self, db: Session, token: str, update_user_schemas: UpdateUserSchemas
     ):
-        current_user = self.get_user_by_token(db=db, token=token)
-        if current_user is None:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
-
+        current_user = get_user_by_token(db=db, token=token)
         stmt = db.query(self.model).filter(
             self.model.user_uuid == current_user.user_uuid
         )
