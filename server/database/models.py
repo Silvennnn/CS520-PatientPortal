@@ -24,6 +24,7 @@ from sqlalchemy.sql.sqltypes import (
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "user"
     account_name = Column(VARCHAR(16), nullable=False, unique=True)
@@ -39,7 +40,6 @@ class User(Base):
     date_of_birth = Column(Date, nullable=False)
     gender = Column(VARCHAR(16), nullable=False)
     address = Column(ARRAY(VARCHAR(32)))
-
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -62,6 +62,7 @@ class Appointment(Base):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+
 
 class MedicalRecord(Base):
     __tablename__ = "medical_record"

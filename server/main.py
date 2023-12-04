@@ -3,9 +3,14 @@ from server.database.postgresql import engine, SessionLocal
 from server.curd.user_crud import UserCRUD
 import logging
 from server.schemas.user_schemas import *
+from server.schemas.schemas_token import Token
+from server.utils import security
+from datetime import timedelta
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, FastAPI
 from pydantic.tools import parse_obj_as
+from fastapi.security import OAuth2PasswordRequestForm
+from server.utils.config import settings
 
 logging.getLogger("fastapi")
 
@@ -22,6 +27,18 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.post("/login/access-token", response_model=Token)
+def login_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
+    user = user_crud.authenticate_user(db, form_data.username, form_data.password)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_jwt_token(
+        data={"sub": str(user.user_uuid)}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.post("/user/createUser/", response_model=UserProfileSchemas)
@@ -45,6 +62,7 @@ def get_user_by_uuid(user_uuid: UUID, db: Session = Depends(get_db)):
         raise HTTPException(400, "No such user with provided UUID")
     return parse_obj_as(UserProfileSchemas, query_user)
 
+
 @app.get("/user/getUserByAccountName/", response_model=UserProfileSchemas)
 def get_user_by_uuid(account_name: str, db: Session = Depends(get_db)):
     # need add current user for example paitent should not have access to this api beside reading himself
@@ -52,4 +70,3 @@ def get_user_by_uuid(account_name: str, db: Session = Depends(get_db)):
     if query_user is None or (isinstance(query_user, list) and len(query_user) == 0):
         raise HTTPException(400, "No such user with provided account name")
     return parse_obj_as(UserProfileSchemas, query_user)
-
