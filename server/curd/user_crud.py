@@ -1,7 +1,7 @@
 import logging
 
 from sqlalchemy.orm import Session
-from server.schemas.user_schemas import CreateUserSchemas
+from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
 from server.database.models import User, Appointment, MedicalRecord
 from typing import List
 from server.utils.security import get_password_hash
@@ -10,6 +10,7 @@ from server.utils.security import verify_password
 from jose import jwt, JWTError
 from server.utils.config import settings
 from uuid import UUID
+from pydantic.tools import parse_obj_as
 
 
 class UserCRUD:
@@ -71,6 +72,8 @@ class UserCRUD:
 
     def get_user_by_uuid_and_token(self, db: Session, token: str, uuid: UUID):
         current_user = self.get_user_by_token(db=db, token=token)
+        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
+            raise HTTPException(status_code=401, detail="Unable to verify token")
         current_uuid = current_user.user_uuid
         if current_user.account_type == 0 and current_user.user_uuid != uuid:
             raise HTTPException(
@@ -93,16 +96,20 @@ class UserCRUD:
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
-                           "that he/her associated with",
+                    "that he/her associated with",
                 )
             query_user = self.get_user_by_uuid(db, current_uuid)
             return query_user
         return current_user
 
     def get_user_by_account_name_and_token(
-            self, db: Session, token: str, account_name: str
+        self, db: Session, token: str, account_name: str
     ):
         current_user = self.get_user_by_token(db=db, token=token)
+        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
+            raise HTTPException(status_code=401, detail="Unable to verify token")
+        if current_user is None or len(current_user) == 0 or len(current_user) > 1:
+            raise HTTPException(status_code=401, detail="Unable to verify token")
         current_uuid = current_user.user_uuid
         current_account_name = current_user.account_name
         if current_user.account_type == 0 and current_account_name != account_name:
@@ -111,21 +118,17 @@ class UserCRUD:
                 detail="patient user could not get user info other than him/herself",
             )
         if current_user.account_type == 1 and current_account_name != account_name:
-            appointment_patient_account_names = (  # will be replaced by appointment crud
-                self.get_patient_account_name_from_result(
-                    db=db,
-                    results=db.query(Appointment).filter(
-                        Appointment.doctor_uuid == current_uuid
-                    ),
-                )
+            appointment_patient_account_names = self.get_patient_account_name_from_result(  # will be replaced by appointment crud
+                db=db,
+                results=db.query(Appointment).filter(
+                    Appointment.doctor_uuid == current_uuid
+                ),
             )
-            medical_record_patient_account_names = (  # will be replaced by medical record crud
-                self.get_patient_account_name_from_result(
-                    db=db,
-                    results=db.query(MedicalRecord).filter(
-                        MedicalRecord.doctor_uuid == current_uuid
-                    ),
-                )
+            medical_record_patient_account_names = self.get_patient_account_name_from_result(  # will be replaced by medical record crud
+                db=db,
+                results=db.query(MedicalRecord).filter(
+                    MedicalRecord.doctor_uuid == current_uuid
+                ),
             )
             account_names_set = set(
                 appointment_patient_account_names + medical_record_patient_account_names
@@ -134,21 +137,49 @@ class UserCRUD:
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
-                           "that he/her associated with",
+                    "that he/her associated with",
                 )
             query_user = self.get_user_by_uuid(db, current_uuid)
             return query_user
         return current_user
 
     def get_patient_uuid_from_result(
-            self, results: List[Appointment | MedicalRecord]
+        self, results: List[Appointment | MedicalRecord]
     ) -> List[UUID]:
         return [entry.patient_uuid for entry in results]
 
     def get_patient_account_name_from_result(
-            self, db, results: List[Appointment | MedicalRecord]
+        self, db: Session, results: List[Appointment | MedicalRecord]
     ) -> List[str]:
         return [
             self.get_user_by_uuid(db, entry.patient_uuid).account_name
             for entry in results
         ]
+
+    def update_user_info(
+        self, db: Session, token: str, update_user_schemas: UpdateUserSchemas
+    ):
+        current_user = self.get_user_by_token(db=db, token=token)
+        if current_user is None:
+            raise HTTPException(status_code=401, detail="Unable to verify token")
+        if current_user.user_uuid != update_user_schemas.user_uuid:
+            raise HTTPException(
+                status_code=401, detail="You can only update your own profile"
+            )
+        db_user = current_user.__dict__
+        update_user_schemas = update_user_schemas.__dict__
+        db_user.pop("user_uuid")
+        logging.info(update_user_schemas.keys())
+        logging.info(db_user.keys())
+        for user_field in db_user:
+            if (
+                user_field in update_user_schemas
+                and update_user_schemas[user_field] != None
+                and len(update_user_schemas[user_field]) != 0
+            ):
+                setattr(db_user, user_field, update_user_schemas[user_field])
+
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return parse_obj_as(User, db_user)

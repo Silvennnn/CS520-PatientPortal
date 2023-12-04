@@ -11,7 +11,7 @@ class CreateUserSchemas(BaseConfig):
     first_name: str
     last_name: str
     middle_name: Optional[str] = None
-    phone_number_number: Optional[str] = None
+    phone_number: Optional[str] = None
     date_of_birth: date
     gender: str
     address: Optional[List[str]] = []
@@ -26,9 +26,8 @@ class GetUserByAccountNameSchemas(BaseConfig):
 
 
 class UpdateUserSchemas(GetUserByUUIDSchemas):
-    password: str
     address: Optional[List[str]] = []
-    phone_number_number: Optional[str] = None
+    phone_number: Optional[str] = None
 
 
 class UserProfileSchemas(BaseConfig):
@@ -38,7 +37,7 @@ class UserProfileSchemas(BaseConfig):
     first_name: str
     last_name: str
     middle_name: Optional[str] = None
-    phone_number_number: str
+    phone_number: str
     date_of_birth: date
     gender: str
     address: Optional[List[str]] = []

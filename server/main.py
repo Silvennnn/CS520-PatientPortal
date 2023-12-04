@@ -74,9 +74,22 @@ def get_me_by_token(token: str, db: Session = Depends(get_db)):
 
 
 @app.get("/user/getUserByAccountName/", response_model=UserProfileSchemas)
-def get_user_by_account_name(account_name: str, db: Session = Depends(get_db)):
-    # need add current user for example paitent should not have access to this api beside reading himself
-    query_user = user_crud.get_user_by_account_name(db=db, account_name=account_name)
+def get_user_by_account_name(
+    account_name: str, token: str, db: Session = Depends(get_db)
+):
+    query_user = user_crud.get_user_by_account_name_and_token(
+        db=db, token=token, account_name=account_name
+    )
     if query_user is None or (isinstance(query_user, list) and len(query_user) == 0):
         raise HTTPException(400, "No such user with provided account name")
     return parse_obj_as(UserProfileSchemas, query_user)
+
+
+@app.post("/user/updateUserProfile", response_model=UserProfileSchemas)
+def update_user_profile(
+    token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
+):
+    updated_user = user_crud.update_user_info(
+        db=db, token=token, update_user_schemas=update_user_schemas
+    )
+    return parse_obj_as(UserProfileSchemas, updated_user)
