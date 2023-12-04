@@ -11,6 +11,7 @@ from jose import jwt, JWTError
 from server.utils.config import settings
 from uuid import UUID
 from pydantic.tools import parse_obj_as
+from fastapi.encoders import jsonable_encoder
 
 
 class UserCRUD:
@@ -162,24 +163,27 @@ class UserCRUD:
         current_user = self.get_user_by_token(db=db, token=token)
         if current_user is None:
             raise HTTPException(status_code=401, detail="Unable to verify token")
-        if current_user.user_uuid != update_user_schemas.user_uuid:
-            raise HTTPException(
-                status_code=401, detail="You can only update your own profile"
-            )
-        db_user = current_user.__dict__
+
+        stmt = db.query(self.model).filter(
+            self.model.user_uuid == current_user.user_uuid
+        )
+        db_user = jsonable_encoder(current_user)
         update_user_schemas = update_user_schemas.__dict__
-        db_user.pop("user_uuid")
-        logging.info(update_user_schemas.keys())
-        logging.info(db_user.keys())
+        update_elem = {}
         for user_field in db_user:
             if (
                 user_field in update_user_schemas
                 and update_user_schemas[user_field] != None
                 and len(update_user_schemas[user_field]) != 0
             ):
-                setattr(db_user, user_field, update_user_schemas[user_field])
-
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-        return parse_obj_as(User, db_user)
+                update_elem[user_field] = update_user_schemas[user_field]
+        stmt.update(update_elem, synchronize_session=False)
+        updated_user = None
+        try:
+            db.commit()
+            updated_user = stmt.first()
+        except Exception as e:
+            print(e)
+            # raise utils.DatabaseCommitError(e)
+        finally:
+            return updated_user

@@ -17,15 +17,7 @@ class CreateUserSchemas(BaseConfig):
     address: Optional[List[str]] = []
 
 
-class GetUserByUUIDSchemas(BaseConfig):
-    user_uuid: UUID
-
-
-class GetUserByAccountNameSchemas(BaseConfig):
-    account_name: str
-
-
-class UpdateUserSchemas(GetUserByUUIDSchemas):
+class UpdateUserSchemas(BaseConfig):
     address: Optional[List[str]] = []
     phone_number: Optional[str] = None
 
