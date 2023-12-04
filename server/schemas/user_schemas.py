@@ -16,17 +16,22 @@ class CreateUserSchemas(BaseConfig):
     gender: str
     address: Optional[List[str]] = []
 
-class GetUserSchemas(BaseConfig):
+
+class GetUserByUUIDSchemas(BaseConfig):
     user_uuid: UUID
 
 
-class UpdateUserSchemas(GetUserSchemas):
+class GetUserByAccountNameSchemas(BaseConfig):
+    account_name: str
+
+
+class UpdateUserSchemas(GetUserByUUIDSchemas):
     password: str
     address: Optional[List[str]] = []
     phone_number_number: Optional[str] = None
 
 
-class UserProfileSchemas(UpdateUserSchemas):
+class UserProfileSchemas(BaseConfig):
     account_name: str
     account_type: int
     first_name: str

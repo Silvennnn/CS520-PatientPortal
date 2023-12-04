@@ -4,10 +4,12 @@ from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
 from sqlalchemy import Column
+from typing import List
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.sqltypes import (
     BOOLEAN,
     INTEGER,
@@ -38,26 +40,6 @@ class User(Base):
     gender = Column(VARCHAR(16), nullable=False)
     address = Column(ARRAY(VARCHAR(32)))
 
-    patient_appointment = relationship(
-        "patient_appointment",
-        primaryjoin="if User.account_type==0",
-        back_populates="patient",
-    )
-    patient_medical_record = relationship(
-        "patient_medical_record",
-        primaryjoin="if User.account_type==0",
-        back_populates="patient",
-    )
-    doctor_appointment = relationship(
-        "doctor_appointment",
-        primaryjoin="if User.account_type==1",
-        back_populates="doctor",
-    )
-    doctor_medical_record = relationship(
-        "doctor_medical_record",
-        primaryjoin="if User.account_type==1",
-        back_populates="doctor",
-    )
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -78,13 +60,10 @@ class Appointment(Base):
     )
     Message = Column(TEXT)
 
-    doctor = relationship("doctor", back_populates="doctor_appointment")
-    patient = relationship("patient", back_populates="patient_appointment")
-
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-class medical_record(Base):
+class MedicalRecord(Base):
     __tablename__ = "medical_record"
     medical_record_uuid = Column(
         UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4
@@ -99,9 +78,6 @@ class medical_record(Base):
     symptom = Column(TEXT)
     diagnosis = Column(TEXT)
     Medication = Column(ARRAY(TEXT))
-
-    doctor = relationship("doctor", back_populates="doctor_medical_record")
-    patient = relationship("patient", back_populates="patient_medical_record")
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
