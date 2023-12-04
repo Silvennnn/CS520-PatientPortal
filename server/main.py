@@ -43,7 +43,7 @@ def login_access_token(
 
 @app.post("/user/createUser/", response_model=UserProfileSchemas)
 def create_user_api(user: CreateUserSchemas, db: Session = Depends(get_db)):
-    logging.info(user.account_type)
+
     if user.account_type != 0 and user.account_type != 1:
         raise HTTPException(404, "User type is not acceptable!")
     if user_crud.get_user_by_account_name(db=db, account_name=user.account_name):
@@ -53,7 +53,7 @@ def create_user_api(user: CreateUserSchemas, db: Session = Depends(get_db)):
 
 
 @app.get("/user/getUserByUUID/", response_model=UserProfileSchemas)
-def get_user_by_uuid(user_uuid: UUID, db: Session = Depends(get_db)):
+def get_user_by_uuid(user_uuid: UUID, token: Token, db: Session = Depends(get_db)):
     # need add current user for example paitent should not have access to this api beside reading himself
     if isinstance(user_uuid, UUID) == False:
         raise HTTPException(400, "the input is not UUID")
