@@ -3,7 +3,11 @@ from server.database.postgresql import engine, SessionLocal
 from server.curd.user_crud import UserCRUD
 from server.curd.appointment_crud import AppointmentCRUD
 import logging
-from server.api.api_utils import get_by_account_name, get_user_by_token, get_account_name_by_uuid
+from server.api.api_utils import (
+    get_by_account_name,
+    get_user_by_token,
+    get_account_name_by_uuid,
+)
 from server.schemas.appointment_schemas import (
     CreateAppointmentSchemas,
     ReturnAppointmentSchemas,
@@ -39,9 +43,11 @@ def get_db():
 
 @app.post("/login/access-token", response_model=LoggedInUser)
 def login_access_token(
-        form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
-    user = fastapi_user_crud.authenticate_user(db, form_data.username, form_data.password)
+    user = fastapi_user_crud.authenticate_user(
+        db, form_data.username, form_data.password
+    )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_jwt_token(
         data={"sub": str(user.user_uuid)}, expires_delta=access_token_expires
@@ -84,7 +90,7 @@ def get_me_by_token(token: str, db: Session = Depends(get_db)):
 
 @app.get("/user/getUserByAccountName/", response_model=UserProfileSchemas)
 def get_user_by_account_name(
-        account_name: str, token: str, db: Session = Depends(get_db)
+    account_name: str, token: str, db: Session = Depends(get_db)
 ):
     query_user = fastapi_user_crud.get_user_by_account_name_and_token(
         db=db, token=token, account_name=account_name
@@ -96,7 +102,7 @@ def get_user_by_account_name(
 
 @app.post("/user/updateUserProfile", response_model=UserProfileSchemas)
 def update_user_profile(
-        token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
+    token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
 ):
     updated_user = fastapi_user_crud.update_user_info(
         db=db, token=token, update_user_schemas=update_user_schemas
@@ -106,9 +112,9 @@ def update_user_profile(
 
 @app.post("/appointment/createAppointment", response_model=ReturnAppointmentSchemas)
 def create_Appointment(
-        token: str,
-        create_appointment_schemas: CreateAppointmentSchemas,
-        db: Session = Depends(get_db),
+    token: str,
+    create_appointment_schemas: CreateAppointmentSchemas,
+    db: Session = Depends(get_db),
 ):
     new_appointment = fastapi_appointment_crud.create_appointment(
         db=db, token=token, create_appointment_schemas=create_appointment_schemas
@@ -116,12 +122,16 @@ def create_Appointment(
     return parse_obj_as(ReturnAppointmentSchemas, new_appointment)
 
 
-@app.get("/appointment/getAppointmentByToken", response_model=List[ReturnAppointmentSchemas])
+@app.get(
+    "/appointment/getAppointmentByToken", response_model=List[ReturnAppointmentSchemas]
+)
 def get_Appointments_by_token(
-        token: str,
-        db: Session = Depends(get_db),
+    token: str,
+    db: Session = Depends(get_db),
 ):
-    user_appointments = fastapi_appointment_crud.get_appointments_by_token(db=db, token=token)
+    user_appointments = fastapi_appointment_crud.get_appointments_by_token(
+        db=db, token=token
+    )
     edited_result = []
     for appointment in user_appointments:
         patient_uuid = appointment.patient_uuid
@@ -132,5 +142,8 @@ def get_Appointments_by_token(
         edited_appointment["patient_account_name"] = patient_account_name
         edited_appointment["doctor_account_name"] = doctor_account_name
         edited_result.append(edited_appointment)
-    result = [parse_obj_as(ReturnAppointmentSchemas, appointment) for appointment in edited_result]
+    result = [
+        parse_obj_as(ReturnAppointmentSchemas, appointment)
+        for appointment in edited_result
+    ]
     return result

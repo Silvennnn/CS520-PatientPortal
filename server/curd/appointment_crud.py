@@ -7,7 +7,6 @@ from server.schemas.appointment_schemas import CreateAppointmentSchemas
 
 
 class AppointmentCRUD:
-
     def __int__(self) -> None:
         self.db_model = Appointment
 
@@ -74,8 +73,10 @@ class AppointmentCRUD:
 
         current_uuid = current_user.user_uuid
         if current_user.account_type == 0:
-            return db.query(Appointment).filter(Appointment.patient_uuid==current_uuid)
+            return db.query(Appointment).filter(
+                Appointment.patient_uuid == current_uuid
+            )
         elif current_user.account_type == 1:
-            return db.query(Appointment).filter(Appointment.doctor_uuid==current_uuid)
+            return db.query(Appointment).filter(Appointment.doctor_uuid == current_uuid)
         else:
             raise HTTPException(status_code=401, detail="unexpected user account type")
