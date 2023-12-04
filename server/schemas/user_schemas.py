@@ -32,10 +32,13 @@ class UpdateUserSchemas(GetUserByUUIDSchemas):
 
 
 class UserProfileSchemas(BaseConfig):
+    user_uuid: UUID
     account_name: str
     account_type: int
     first_name: str
     last_name: str
     middle_name: Optional[str] = None
+    phone_number_number: str
     date_of_birth: date
     gender: str
+    address: Optional[List[str]] = []
