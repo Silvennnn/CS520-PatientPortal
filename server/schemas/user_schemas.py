@@ -42,3 +42,8 @@ class UserProfileSchemas(BaseConfig):
     date_of_birth: date
     gender: str
     address: Optional[List[str]] = []
+
+
+class LoggedInUser(UserProfileSchemas):
+    access_token: str
+    token_type: str
