@@ -36,7 +36,7 @@ class User(Base):
     first_name = Column(VARCHAR(32), nullable=False)
     last_name = Column(VARCHAR(32), nullable=False)
     middle_name = Column(VARCHAR(32))
-    phone_number_number = Column(VARCHAR(16))
+    phone_number = Column(VARCHAR(16))
     date_of_birth = Column(Date, nullable=False)
     gender = Column(VARCHAR(16), nullable=False)
     address = Column(ARRAY(VARCHAR(32)))
@@ -58,7 +58,8 @@ class Appointment(Base):
     patient_uuid = Column(
         UUID(as_uuid=True), ForeignKey("user.user_uuid"), nullable=False
     )
-    Message = Column(TEXT)
+    message = Column(TEXT)
+    status = Column(INTEGER, default=0)  # {0: appending, 1: scheduled, -1:canceled}
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

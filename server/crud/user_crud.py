@@ -1,15 +1,15 @@
-import logging
-
-from sqlalchemy.orm import Session
-from server.schemas.user_schemas import CreateUserSchemas
-from server.database.models import User, Appointment, MedicalRecord
 from typing import List
-from server.utils.security import get_password_hash
-from fastapi import HTTPException
-from server.utils.security import verify_password
-from jose import jwt, JWTError
-from server.utils.config import settings
 from uuid import UUID
+
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import Session
+
+from server.crud.crud_utils import get_user_by_token
+from server.database.models import User, Appointment, MedicalRecord
+from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
+from server.utils.security import get_password_hash
+from server.utils.security import verify_password
 
 
 class UserCRUD:
@@ -17,7 +17,7 @@ class UserCRUD:
         self.model = User
 
     def create_user(self, db: Session, create_user_schemas: CreateUserSchemas) -> User:
-        new_user = create_user_schemas.dict()
+        new_user = create_user_schemas.__dict__
         hashed_password = get_password_hash(create_user_schemas.password)
         new_user["account_name"] = str(create_user_schemas.account_name)
         new_user["hashed_password"] = hashed_password
@@ -58,19 +58,8 @@ class UserCRUD:
             raise HTTPException(status_code=401, detail="Incorrect password")
         return user
 
-    def get_user_by_token(self, db: Session, token: str) -> User:
-        try:
-            payload = jwt.decode(token, "secret", algorithms=[settings.JWT_ALGORITHM])
-            user_uuid: UUID = payload.get("sub")
-            if user_uuid is None or isinstance(user_uuid, UUID):
-                raise HTTPException(status_code=401, detail="Unable to verify token")
-        except JWTError:
-            raise HTTPException(status_code=401, detail="Unable to verify token")
-        user = self.get_user_by_uuid(db, user_uuid)
-        return user
-
     def get_user_by_uuid_and_token(self, db: Session, token: str, uuid: UUID):
-        current_user = self.get_user_by_token(db=db, token=token)
+        current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
         if current_user.account_type == 0 and current_user.user_uuid != uuid:
             raise HTTPException(
@@ -93,16 +82,16 @@ class UserCRUD:
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
-                           "that he/her associated with",
+                    "that he/her associated with",
                 )
             query_user = self.get_user_by_uuid(db, current_uuid)
             return query_user
         return current_user
 
     def get_user_by_account_name_and_token(
-            self, db: Session, token: str, account_name: str
+        self, db: Session, token: str, account_name: str
     ):
-        current_user = self.get_user_by_token(db=db, token=token)
+        current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
         current_account_name = current_user.account_name
         if current_user.account_type == 0 and current_account_name != account_name:
@@ -111,21 +100,17 @@ class UserCRUD:
                 detail="patient user could not get user info other than him/herself",
             )
         if current_user.account_type == 1 and current_account_name != account_name:
-            appointment_patient_account_names = (  # will be replaced by appointment crud
-                self.get_patient_account_name_from_result(
-                    db=db,
-                    results=db.query(Appointment).filter(
-                        Appointment.doctor_uuid == current_uuid
-                    ),
-                )
+            appointment_patient_account_names = self.get_patient_account_name_from_result(  # will be replaced by appointment crud
+                db=db,
+                results=db.query(Appointment).filter(
+                    Appointment.doctor_uuid == current_uuid
+                ),
             )
-            medical_record_patient_account_names = (  # will be replaced by medical record crud
-                self.get_patient_account_name_from_result(
-                    db=db,
-                    results=db.query(MedicalRecord).filter(
-                        MedicalRecord.doctor_uuid == current_uuid
-                    ),
-                )
+            medical_record_patient_account_names = self.get_patient_account_name_from_result(  # will be replaced by medical record crud
+                db=db,
+                results=db.query(MedicalRecord).filter(
+                    MedicalRecord.doctor_uuid == current_uuid
+                ),
             )
             account_names_set = set(
                 appointment_patient_account_names + medical_record_patient_account_names
@@ -134,21 +119,49 @@ class UserCRUD:
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
-                           "that he/her associated with",
+                    "that he/her associated with",
                 )
             query_user = self.get_user_by_uuid(db, current_uuid)
             return query_user
         return current_user
 
     def get_patient_uuid_from_result(
-            self, results: List[Appointment | MedicalRecord]
+        self, results: List[Appointment | MedicalRecord]
     ) -> List[UUID]:
         return [entry.patient_uuid for entry in results]
 
     def get_patient_account_name_from_result(
-            self, db, results: List[Appointment | MedicalRecord]
+        self, db: Session, results: List[Appointment | MedicalRecord]
     ) -> List[str]:
         return [
             self.get_user_by_uuid(db, entry.patient_uuid).account_name
             for entry in results
         ]
+
+    def update_user_info(
+        self, db: Session, token: str, update_user_schemas: UpdateUserSchemas
+    ):
+        current_user = get_user_by_token(db=db, token=token)
+        stmt = db.query(self.model).filter(
+            self.model.user_uuid == current_user.user_uuid
+        )
+        db_user = jsonable_encoder(current_user)
+        update_user_schemas = update_user_schemas.__dict__
+        update_elem = {}
+        for user_field in db_user:
+            if (
+                user_field in update_user_schemas
+                and update_user_schemas[user_field] != None
+                and len(update_user_schemas[user_field]) != 0
+            ):
+                update_elem[user_field] = update_user_schemas[user_field]
+        stmt.update(update_elem, synchronize_session=False)
+        updated_user = None
+        try:
+            db.commit()
+            updated_user = stmt.first()
+        except Exception as e:
+            print(e)
+            # raise utils.DatabaseCommitError(e)
+        finally:
+            return updated_user
