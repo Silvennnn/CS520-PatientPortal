@@ -152,27 +152,31 @@ def get_appointments_by_account_name(
 
     return parse_list_of_appointment(db=db, appointments=user_appointments)
 
+
 @app.post(
     "/appointment/updateAppointmentByUUID/",
     response_model=ReturnAppointmentSchemas,
 )
 def update_appointment_by_uuid(
-    token:str,
+    token: str,
     appointment_uuid: UUID,
     update_appointment_schemas: UpdateAppointmentSchemas,
     db: Session = Depends(get_db),
 ):
     updated_appointment = fastapi_appointment_crud.update_Appointment_By_UUID(
-        db=db, token=token,appointment_uuid=appointment_uuid, update_appointment_schemas=update_appointment_schemas
+        db=db,
+        token=token,
+        appointment_uuid=appointment_uuid,
+        update_appointment_schemas=update_appointment_schemas,
     )
     return parse_apointment(db, updated_appointment)
 
+
 @app.post(
-    "/appointment/confirmAppointmentByUUID/",
-    response_model=ReturnAppointmentSchemas
+    "/appointment/confirmAppointmentByUUID/", response_model=ReturnAppointmentSchemas
 )
 def confirm_appointment_by_uuid(
-    token:str,
+    token: str,
     appointment_uuid: UUID,
     db: Session = Depends(get_db),
 ):
@@ -181,12 +185,12 @@ def confirm_appointment_by_uuid(
     )
     return parse_apointment(db, confirmed_appointment)
 
+
 @app.post(
-    "/appointment/cancelAppointmentByUUID/",
-    response_model=ReturnAppointmentSchemas
+    "/appointment/cancelAppointmentByUUID/", response_model=ReturnAppointmentSchemas
 )
 def cancel_appointment_by_uuid(
-    token:str,
+    token: str,
     appointment_uuid: UUID,
     db: Session = Depends(get_db),
 ):
@@ -195,10 +199,13 @@ def cancel_appointment_by_uuid(
     )
     return parse_apointment(db, confirmed_appointment)
 
+
 @app.delete("/appointment/deleteAppointmentByUUID")
 def delete_appointment_by_uuid(
     token: str,
     appointment_uuid: UUID,
     db: Session = Depends(get_db),
 ):
-    return fastapi_appointment_crud.delete_appointment_by_uuid(db=db, token=token, appointment_uuid=appointment_uuid)
+    return fastapi_appointment_crud.delete_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )

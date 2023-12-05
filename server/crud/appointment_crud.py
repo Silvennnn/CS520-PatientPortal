@@ -20,20 +20,20 @@ class AppointmentCRUD:
         self.db_model = Appointment
 
     def create_appointment(
-            self,
-            db: Session,
-            token: str,
-            create_appointment_schemas: CreateAppointmentSchemas,
+        self,
+        db: Session,
+        token: str,
+        create_appointment_schemas: CreateAppointmentSchemas,
     ) -> Appointment:
         submit_user = get_user_by_token(db=db, token=token)
         if (
-                submit_user.account_type == 0
-                and create_appointment_schemas.patient_account_name
-                != submit_user.account_name
+            submit_user.account_type == 0
+            and create_appointment_schemas.patient_account_name
+            != submit_user.account_name
         ) or (
-                submit_user.account_type == 1
-                and create_appointment_schemas.doctor_account_name
-                != submit_user.account_name
+            submit_user.account_type == 1
+            and create_appointment_schemas.doctor_account_name
+            != submit_user.account_name
         ):
             raise HTTPException(
                 status_code=401,
@@ -91,7 +91,7 @@ class AppointmentCRUD:
             raise HTTPException(status_code=401, detail="unexpected user account type")
 
     def get_appointments_by_account_name(
-            self, db: Session, token: str, account_name: str
+        self, db: Session, token: str, account_name: str
     ) -> List[Appointment]:
         current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
@@ -113,7 +113,7 @@ class AppointmentCRUD:
                 )
             target_user_uuid = target_user.user_uuid
             if is_doctor_associated_with_patient(
-                    db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid
+                db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid
             ):
                 return db.query(Appointment).filter(
                     Appointment.patient_uuid == target_user_uuid
@@ -126,7 +126,7 @@ class AppointmentCRUD:
             raise HTTPException(status_code=401, detail="unexpected user account type")
 
     def get_appointment_by_uuid(
-            self, db: Session, appointment_uuid: UUID
+        self, db: Session, appointment_uuid: UUID
     ) -> Appointment:
         appointment = (
             db.query(Appointment)
@@ -140,11 +140,11 @@ class AppointmentCRUD:
         return appointment
 
     def update_Appointment_By_UUID(
-            self,
-            db: Session,
-            token: str,
-            appointment_uuid: UUID,
-            update_appointment_schemas: UpdateAppointmentSchemas,
+        self,
+        db: Session,
+        token: str,
+        appointment_uuid: UUID,
+        update_appointment_schemas: UpdateAppointmentSchemas,
     ) -> Appointment:
         update_info_dict = update_appointment_schemas.__dict__
         allowed_field = update_info_dict.keys()
@@ -187,9 +187,9 @@ class AppointmentCRUD:
         current_appointment = current_appointment.__dict__
         for appointment_filed in current_appointment:
             if (
-                    appointment_filed in allowed_field
-                    and appointment_filed in update_info_dict
-                    and update_info_dict[appointment_filed] is not None
+                appointment_filed in allowed_field
+                and appointment_filed in update_info_dict
+                and update_info_dict[appointment_filed] is not None
             ):
                 update_field[appointment_filed] = update_info_dict[appointment_filed]
         stmt.update(update_field, synchronize_session=False)
@@ -204,10 +204,10 @@ class AppointmentCRUD:
             return updated_appointment
 
     def confirm_appointment_by_uuid(
-            self,
-            db: Session,
-            token: str,
-            appointment_uuid: UUID,
+        self,
+        db: Session,
+        token: str,
+        appointment_uuid: UUID,
     ) -> Appointment:
         current_user = get_user_by_token(db=db, token=token)
         if current_user.account_type != 1:
@@ -247,10 +247,10 @@ class AppointmentCRUD:
             return confirmed_appointment
 
     def cancel_appointment_by_uuid(
-            self,
-            db: Session,
-            token: str,
-            appointment_uuid: UUID,
+        self,
+        db: Session,
+        token: str,
+        appointment_uuid: UUID,
     ) -> Appointment:
         current_user = get_user_by_token(db=db, token=token)
         stmt = db.query(Appointment).filter(
@@ -262,7 +262,10 @@ class AppointmentCRUD:
                 status_code=401,
                 detail="The appointment uuid you provide is invalid",
             )
-        if current_appointment.doctor_uuid != current_user.user_uuid and current_appointment.patient_uuid != current_user.user_uuid:
+        if (
+            current_appointment.doctor_uuid != current_user.user_uuid
+            and current_appointment.patient_uuid != current_user.user_uuid
+        ):
             raise HTTPException(
                 status_code=401,
                 detail="This appointment does not belongs to you",
@@ -285,10 +288,10 @@ class AppointmentCRUD:
             return cancelled_appointment
 
     def delete_appointment_by_uuid(
-            self,
-            db: Session,
-            token: str,
-            appointment_uuid: UUID,
+        self,
+        db: Session,
+        token: str,
+        appointment_uuid: UUID,
     ):
         current_user = get_user_by_token(db=db, token=token)
         stmt = db.query(Appointment).filter(
@@ -300,7 +303,10 @@ class AppointmentCRUD:
                 status_code=401,
                 detail="The appointment uuid you provide is invalid",
             )
-        if current_appointment.patient_uuid != current_user.user_uuid and current_appointment.doctor_uuid != current_user.user_uuid:
+        if (
+            current_appointment.patient_uuid != current_user.user_uuid
+            and current_appointment.doctor_uuid != current_user.user_uuid
+        ):
             raise HTTPException(
                 status_code=401,
                 detail="This appointment does not belongs to you",
