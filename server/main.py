@@ -166,3 +166,39 @@ def update_appointment_by_uuid(
         db=db, token=token,appointment_uuid=appointment_uuid, update_appointment_schemas=update_appointment_schemas
     )
     return parse_apointment(db, updated_appointment)
+
+@app.post(
+    "/appointment/confirmAppointmentByUUID/",
+    response_model=ReturnAppointmentSchemas
+)
+def confirm_appointment_by_uuid(
+    token:str,
+    appointment_uuid: UUID,
+    db: Session = Depends(get_db),
+):
+    confirmed_appointment = fastapi_appointment_crud.confirm_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )
+    return parse_apointment(db, confirmed_appointment)
+
+@app.post(
+    "/appointment/cancelAppointmentByUUID/",
+    response_model=ReturnAppointmentSchemas
+)
+def cancel_appointment_by_uuid(
+    token:str,
+    appointment_uuid: UUID,
+    db: Session = Depends(get_db),
+):
+    confirmed_appointment = fastapi_appointment_crud.cancel_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )
+    return parse_apointment(db, confirmed_appointment)
+
+@app.delete("/appointment/deleteAppointmentByUUID")
+def delete_appointment_by_uuid(
+    token: str,
+    appointment_uuid: UUID,
+    db: Session = Depends(get_db),
+):
+    return fastapi_appointment_crud.delete_appointment_by_uuid(db=db, token=token, appointment_uuid=appointment_uuid)
