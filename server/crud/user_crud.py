@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from server.api.api_utils import get_user_by_token
+from server.crud.crud_utils import get_user_by_token
 from server.database.models import User, Appointment, MedicalRecord
 from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
 from server.utils.security import get_password_hash
@@ -17,7 +17,7 @@ class UserCRUD:
         self.model = User
 
     def create_user(self, db: Session, create_user_schemas: CreateUserSchemas) -> User:
-        new_user = create_user_schemas.dict()
+        new_user = create_user_schemas.__dict__
         hashed_password = get_password_hash(create_user_schemas.password)
         new_user["account_name"] = str(create_user_schemas.account_name)
         new_user["hashed_password"] = hashed_password

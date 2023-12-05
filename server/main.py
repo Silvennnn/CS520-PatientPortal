@@ -1,13 +1,8 @@
 from server.database.models import Base
 from server.database.postgresql import engine, SessionLocal
-from server.curd.user_crud import UserCRUD
-from server.curd.appointment_crud import AppointmentCRUD
+from server.crud.user_crud import UserCRUD
+from server.crud.appointment_crud import AppointmentCRUD
 import logging
-from server.api.api_utils import (
-    get_by_account_name,
-    get_user_by_token,
-    get_account_name_by_uuid,
-)
 from server.schemas.appointment_schemas import (
     CreateAppointmentSchemas,
     ReturnAppointmentSchemas,
@@ -20,7 +15,7 @@ from fastapi import Depends, HTTPException, FastAPI
 from pydantic.tools import parse_obj_as
 from fastapi.security import OAuth2PasswordRequestForm
 from server.utils.config import settings
-from copy import copy
+from server.crud.crud_utils import parse_list_of_appointment, parse_apointment, get_by_account_name, get_user_by_token
 
 logging.getLogger("fastapi")
 
@@ -119,7 +114,7 @@ def create_Appointment(
     new_appointment = fastapi_appointment_crud.create_appointment(
         db=db, token=token, create_appointment_schemas=create_appointment_schemas
     )
-    return parse_obj_as(ReturnAppointmentSchemas, new_appointment)
+    return parse_apointment(db=db, appointment=new_appointment)
 
 
 @app.get(
@@ -132,18 +127,21 @@ def get_Appointments_by_token(
     user_appointments = fastapi_appointment_crud.get_appointments_by_token(
         db=db, token=token
     )
-    edited_result = []
-    for appointment in user_appointments:
-        patient_uuid = appointment.patient_uuid
-        doctor_uuid = appointment.doctor_uuid
-        patient_account_name = get_account_name_by_uuid(patient_uuid)
-        doctor_account_name = get_account_name_by_uuid(doctor_uuid)
-        edited_appointment = copy(appointment.__dict__)
-        edited_appointment["patient_account_name"] = patient_account_name
-        edited_appointment["doctor_account_name"] = doctor_account_name
-        edited_result.append(edited_appointment)
-    result = [
-        parse_obj_as(ReturnAppointmentSchemas, appointment)
-        for appointment in edited_result
-    ]
-    return result
+
+    return parse_list_of_appointment(db=db, appointments=user_appointments)
+
+
+@app.get(
+    "/appointment/getAppointmentByAccountName",
+    response_model=List[ReturnAppointmentSchemas],
+)
+def get_Appointments_by_account_name(
+    token: str,
+    account_name: str,
+    db: Session = Depends(get_db),
+):
+    user_appointments = fastapi_appointment_crud.get_appointments_by_account_name(
+        db=db, token=token, account_name=account_name
+    )
+
+    return parse_list_of_appointment(db=db, appointments=user_appointments)
