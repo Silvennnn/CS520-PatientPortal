@@ -7,12 +7,15 @@ from server.database.models import User
 from server.utils.config import settings
 from uuid import UUID
 
-from server.database.models import Appointment
+from server.database.models import Appointment, MedicalRecord
 from server.schemas.appointment_schemas import ReturnAppointmentSchemas
 from copy import copy
 from typing import List
 from sqlalchemy.orm import Session
 from pydantic.tools import parse_obj_as
+from sqlalchemy import and_
+
+
 def get_user_by_token(db: Session, token: str) -> User:
     try:
         payload = jwt.decode(token, "secret", algorithms=[settings.JWT_ALGORITHM])
@@ -35,8 +38,9 @@ def get_account_name_by_uuid(db: Session, user_uuid: UUID) -> str:
     user = db.query(User).filter(User.user_uuid == user_uuid).first()
     return user.account_name
 
+
 def parse_list_of_appointment(
-        db: Session, appointments: List[Appointment]
+    db: Session, appointments: List[Appointment]
 ) -> List[ReturnAppointmentSchemas]:
     result = []
     for appointment in appointments:
@@ -53,3 +57,31 @@ def parse_apointment(db: Session, appointment: Appointment) -> ReturnAppointment
     edited_appointment["patient_account_name"] = patient_account_name
     edited_appointment["doctor_account_name"] = doctor_account_name
     return parse_obj_as(ReturnAppointmentSchemas, edited_appointment)
+
+
+def is_doctor_associated_with_patient(
+    db: Session, doctor_uuid: UUID, patient_uuid: UUID
+) -> bool:
+    associated_appointments = (
+        db.query(Appointment)
+        .filter(
+            and_(
+                Appointment.doctor_uuid == doctor_uuid,
+                Appointment.patient_uuid == patient_uuid,
+            )
+        )
+        .count()
+        > 0
+    )
+    associated_medical_record = (
+        db.query(MedicalRecord)
+        .filter(
+            and_(
+                MedicalRecord.doctor_uuid == doctor_uuid,
+                MedicalRecord.patient_uuid == patient_uuid,
+            )
+        )
+        .count()
+        > 0
+    )
+    return associated_appointments or associated_medical_record

@@ -1,9 +1,16 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from server.crud.crud_utils import get_user_by_token, get_by_account_name
-from server.database.models import Appointment, MedicalRecord
-from server.schemas.appointment_schemas import CreateAppointmentSchemas
+from server.crud.crud_utils import (
+    get_user_by_token,
+    get_by_account_name,
+    is_doctor_associated_with_patient,
+)
+from server.database.models import Appointment
+from server.schemas.appointment_schemas import (
+    CreateAppointmentSchemas,
+    UpdateAppointmentSchemas,
+)
 from uuid import UUID
 from sqlalchemy import and_
 
@@ -105,7 +112,7 @@ class AppointmentCRUD:
                     status_code=401, detail="you cannot look for other doctors"
                 )
             target_user_uuid = target_user.user_uuid
-            if self.is_doctor_associated_with_patient(
+            if is_doctor_associated_with_patient(
                 db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid
             ):
                 return db.query(Appointment).filter(
@@ -118,29 +125,75 @@ class AppointmentCRUD:
         else:
             raise HTTPException(status_code=401, detail="unexpected user account type")
 
-    def is_doctor_associated_with_patient(
-        self, db: Session, doctor_uuid: UUID, patient_uuid: UUID
-    ) -> bool:
-        associated_appointments = (
+    def get_appointment_by_uuid(
+        self, db: Session, appointment_uuid: UUID
+    ) -> Appointment:
+        appointment = (
             db.query(Appointment)
-            .filter(
-                and_(
-                    Appointment.doctor_uuid == doctor_uuid,
-                    Appointment.patient_uuid == patient_uuid,
-                )
-            )
-            .count()
-            > 0
+            .filter(Appointment.appointment_uuid == appointment_uuid)
+            .first()
         )
-        associated_medical_record = (
-            db.query(MedicalRecord)
-            .filter(
-                and_(
-                    MedicalRecord.doctor_uuid == doctor_uuid,
-                    MedicalRecord.patient_uuid == patient_uuid,
-                )
+        if appointment is None:
+            raise HTTPException(
+                status_code=401, detail="the appointment uuid you provide is invalid"
             )
-            .count()
-            > 0
+        return appointment
+
+    def update_Appointment_By_UUID(
+        self,
+        db: Session,
+        token: str,
+        appointment_uuid: UUID,
+        update_appointment_schemas: UpdateAppointmentSchemas,
+    ) -> Appointment:
+        update_info_dict = update_appointment_schemas.__dict__
+        allowed_field = update_info_dict.keys()
+        update_field = {}
+        current_user = get_user_by_token(db=db, token=token)
+        stmt = db.query(Appointment).filter(
+            Appointment.appointment_uuid == appointment_uuid
         )
-        return associated_appointments or associated_medical_record
+        current_appointment = stmt.first()
+        if current_user.account_type == 0:
+            allowed_field = {
+                "datetime",
+                "message",
+            }  # user should not update the location
+            if current_appointment.patient_uuid != current_user.user_uuid:
+                raise HTTPException(
+                    status_code=401,
+                    detail="the appointment uuid you provide is not belongs to you",
+                )
+            update_field[
+                "status"
+            ] = 0  # if user changed the appointment, the appointment auto set to appending
+        elif current_user.account_type == 1:
+            if current_appointment.doctor_uuid != current_user.user_uuid:
+                raise HTTPException(
+                    status_code=401,
+                    detail="the appointment uuid you provide is not belongs to you",
+                )
+            update_field[
+                "status"
+            ] = 1  # if user changed the appointment, the appointment auto set to appending
+        else:
+            raise HTTPException(status_code=401, detail="unexpected user account type")
+
+        current_appointment = current_appointment.__dict__
+        for appointment_filed in current_appointment:
+            if (
+                appointment_filed in allowed_field
+                and appointment_filed in update_info_dict
+                and update_info_dict[appointment_filed] is not None
+            ):
+                update_field[appointment_filed] = update_info_dict[appointment_filed]
+        stmt.update(update_field, synchronize_session=False)
+        updated_appointment = None
+        try:
+            db.commit()
+            updated_appointment = stmt.first()
+        except Exception as e:
+            print(e)
+            # raise utils.DatabaseCommitError(e)
+        finally:
+            return updated_appointment

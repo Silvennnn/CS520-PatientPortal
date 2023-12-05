@@ -6,6 +6,7 @@ import logging
 from server.schemas.appointment_schemas import (
     CreateAppointmentSchemas,
     ReturnAppointmentSchemas,
+    UpdateAppointmentSchemas,
 )
 from server.schemas.user_schemas import *
 from server.utils import security
@@ -15,7 +16,12 @@ from fastapi import Depends, HTTPException, FastAPI
 from pydantic.tools import parse_obj_as
 from fastapi.security import OAuth2PasswordRequestForm
 from server.utils.config import settings
-from server.crud.crud_utils import parse_list_of_appointment, parse_apointment, get_by_account_name, get_user_by_token
+from server.crud.crud_utils import (
+    parse_list_of_appointment,
+    parse_apointment,
+    get_by_account_name,
+    get_user_by_token,
+)
 
 logging.getLogger("fastapi")
 
@@ -120,7 +126,7 @@ def create_Appointment(
 @app.get(
     "/appointment/getAppointmentByToken", response_model=List[ReturnAppointmentSchemas]
 )
-def get_Appointments_by_token(
+def get_appointments_by_token(
     token: str,
     db: Session = Depends(get_db),
 ):
@@ -135,7 +141,7 @@ def get_Appointments_by_token(
     "/appointment/getAppointmentByAccountName",
     response_model=List[ReturnAppointmentSchemas],
 )
-def get_Appointments_by_account_name(
+def get_appointments_by_account_name(
     token: str,
     account_name: str,
     db: Session = Depends(get_db),
@@ -145,3 +151,18 @@ def get_Appointments_by_account_name(
     )
 
     return parse_list_of_appointment(db=db, appointments=user_appointments)
+
+@app.post(
+    "/appointment/updateAppointmentByUUID/",
+    response_model=ReturnAppointmentSchemas,
+)
+def update_appointment_by_uuid(
+    token:str,
+    appointment_uuid: UUID,
+    update_appointment_schemas: UpdateAppointmentSchemas,
+    db: Session = Depends(get_db),
+):
+    updated_appointment = fastapi_appointment_crud.update_Appointment_By_UUID(
+        db=db, token=token,appointment_uuid=appointment_uuid, update_appointment_schemas=update_appointment_schemas
+    )
+    return parse_apointment(db, updated_appointment)
