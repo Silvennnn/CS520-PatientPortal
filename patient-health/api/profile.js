@@ -36,19 +36,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.registerUser = exports.baseURL = void 0;
+exports.updateUserProfile = exports.baseURL = void 0;
 exports.baseURL = 'http://127.0.0.1:8000';
-function registerUser(user) {
+function updateUserProfile(token, address, phoneNumber) {
     return __awaiter(this, void 0, void 0, function () {
         var response;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch(exports.baseURL + "/user/createUser/", {
+                case 0: return [4 /*yield*/, fetch(exports.baseURL + "/user/updateUserProfile?token=".concat(token), {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/json",
                         },
-                        body: JSON.stringify(user)
+                        body: JSON.stringify({
+                            address: address,
+                            phone_number: phoneNumber
+                        })
                     })];
                 case 1:
                     response = _a.sent();
@@ -56,42 +59,13 @@ function registerUser(user) {
                         console.log("success");
                         return [2 /*return*/, response.json()];
                     }
-                    else {
-                        console.error("error");
-                    }
                     return [2 /*return*/];
             }
         });
     });
 }
-exports.registerUser = registerUser;
-function login(form) {
-    return __awaiter(this, void 0, void 0, function () {
-        var response, dt;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch(exports.baseURL + "/login/access-token", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: new URLSearchParams(form).toString()
-                    })];
-                case 1:
-                    response = _a.sent();
-                    if (response.ok) {
-                        dt = response.json();
-                        return [2 /*return*/, dt];
-                    }
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.login = login;
-//Test
-var form = {
-    'username': "test112",
-    'password': "123",
-};
-login(form);
+exports.updateUserProfile = updateUserProfile;
+var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRjLTRkZDQtODA2Zi1iMTJkZDM4Y2FkMTUiLCJleHAiOjE3MDQ0MjU3Mzd9.G9IWNPZPdyTU9jCXkpWU2pwVw0wkLLYSQRB_PVbT8ZM";
+var address = [];
+var phone_number = "4131234567";
+updateUserProfile(token, address, phone_number);

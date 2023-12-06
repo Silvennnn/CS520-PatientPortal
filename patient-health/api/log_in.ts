@@ -19,6 +19,18 @@ export interface Form{
     "password": string,
 }
 
+export interface Record{
+      "symptom": string,
+      "diagnosis": string,
+      "Medication": [
+        "string"
+      ],
+      "date_of_visit": "2023-12-06T03:28:23.220Z",
+      "doctor_account_name": "string",
+      "patient_account_name": "string"
+}
+
+
 export async function registerUser(user: User){
     const response = await fetch(baseURL + "/user/createUser/", {
         method: "POST",
@@ -49,6 +61,8 @@ export async function login(form: Form){
         return dt
     }
 }
+
+
 
 //Test
 const form : Form = {
