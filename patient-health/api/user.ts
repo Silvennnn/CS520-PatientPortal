@@ -41,4 +41,21 @@ const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRj
 const id = "ec48e2f9-0a4c-4dd4-806f-b12dd38cad15"
 
 
-getUserByUUID(id, token)
+export async function getMe(token){
+     const response = await fetch(baseURL + `/user/getMe/?token=${token}`,{
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+     if(!response.ok){
+         throw new Error(`HTTP error! Status: ${response.status}`);
+     }
+    else{
+        const data = await response.json();
+        return data;
+     }
+
+}
+
+getMe(token)
