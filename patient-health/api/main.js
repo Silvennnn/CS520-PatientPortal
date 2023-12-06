@@ -37,25 +37,24 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.registerUser = exports.baseURL = void 0;
-var axios_1 = require("axios");
-//
-//
-//
 exports.baseURL = 'http://127.0.0.1:8000';
 function registerUser(user) {
     return __awaiter(this, void 0, void 0, function () {
         var response;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, axios_1.default.post(exports.baseURL + "/user/createUser/", user, {
+                case 0: return [4 /*yield*/, fetch(exports.baseURL + "/user/createUser/", {
+                        method: "POST",
                         headers: {
                             "Content-Type": "application/json"
-                        }
+                        },
+                        body: JSON.stringify(user)
                     })];
                 case 1:
                     response = _a.sent();
-                    if (response.status === 200) {
+                    if (response.ok) {
                         console.log("success");
+                        return [2 /*return*/, response.json()];
                     }
                     else {
                         console.error("error");
@@ -66,34 +65,23 @@ function registerUser(user) {
     });
 }
 exports.registerUser = registerUser;
-// const testUser: User = {
-//     "account_name": 'test115',
-//   "password": "string",
-//   "account_type": 0,
-//   "first_name": "G",
-//   "last_name": "D",
-//   "middle_name": "string",
-//   "phone_number": "string",
-//   "date_of_birth": "2023-05-11",
-//   "gender": "string",
-//   "address": [],
-// }
-// registerUser(testUser)
 function login(form) {
     return __awaiter(this, void 0, void 0, function () {
         var response, dt;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, axios_1.default.post(exports.baseURL + "/login/access-token", new URLSearchParams(form).toString(), {
+                case 0: return [4 /*yield*/, fetch(exports.baseURL + "/login/access-token", {
+                        method: "POST",
                         headers: {
                             "Content-Type": "application/x-www-form-urlencoded"
-                        }
+                        },
+                        body: new URLSearchParams(form).toString()
                     })];
                 case 1:
                     response = _a.sent();
-                    if (response) {
-                        dt = response.data;
-                        console.log(dt);
+                    if (response.ok) {
+                        dt = response.json();
+                        return [2 /*return*/, dt];
                     }
                     return [2 /*return*/];
             }

@@ -1,10 +1,3 @@
-
-import axios from "axios";
-
-//
-//
-//
-
 export const baseURL = 'http://127.0.0.1:8000';
 
 export interface User {
@@ -27,32 +20,32 @@ export interface Form{
 }
 
 export async function registerUser(user: User){
-    const response = await axios.post(baseURL + "/user/createUser/",
-       user
-    , {
+    const response = await fetch(baseURL + "/user/createUser/", {
+        method: "POST",
         headers: {
             "Content-Type": "application/json"
-        }
-        }
-    );
-    if(response.status === 200){
+        },
+        body: JSON.stringify(user)
+        });
+    if(response.ok){
         console.log("success");
+        return response.json();
     } else {
         console.error("error");
     }
 }
 
 export async function login(form: Form){
-    const response = await axios.post(baseURL + "/login/access-token",
-        new URLSearchParams(form as any).toString()
-    , {
+    const response = await fetch(baseURL + "/login/access-token",{
+        method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded"
-        }
-        }
+        },
+        body:  new URLSearchParams(form as any).toString()
+    }
     );
-    if(response){
-        const dt = response.data
+    if(response.ok){
+        const dt = response.json();
         return dt
     }
 }
