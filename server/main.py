@@ -13,6 +13,7 @@ from server.utils import security
 from datetime import timedelta
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic.tools import parse_obj_as
 from fastapi.security import OAuth2PasswordRequestForm
 from server.utils.config import settings
@@ -23,11 +24,29 @@ from server.crud.crud_utils import (
     get_user_by_token,
 )
 
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+
+
+
 logging.getLogger("fastapi")
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 fastapi_user_crud = UserCRUD()
 
