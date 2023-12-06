@@ -15,6 +15,7 @@ from server.schemas.medical_record_schemas import (
     UpdateMedicalRecordSchemas,
     ReturnMedicalRecordSchemas,
 )
+from server.schemas.login_schemas import LoginPayload
 from server.utils import security
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -69,10 +70,10 @@ def get_db():
 
 @app.post("/login/access-token/", response_model=LoggedInUser)
 def login_access_token(
-        form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+        login_payload: LoginPayload, db: Session = Depends(get_db)
 ):
     user = fastapi_user_crud.authenticate_user(
-        db, form_data.username, form_data.password
+        db, login_payload.account_name, login_payload.password
     )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_jwt_token(
