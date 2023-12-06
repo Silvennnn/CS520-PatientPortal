@@ -1,12 +1,16 @@
 "use client";
-import React, {Fragment, useRef, useState} from "react";
+import React, {Fragment, useEffect, useRef, useState} from "react";
 import Link from 'next/link';
 import {Dialog, Transition} from "@headlessui/react";
-import {CheckIcon} from "@heroicons/react/24/outline";
-import Datetime from 'react-datetime';
-import "react-datetime/css/react-datetime.css";
+import app_init from "@/app/initialize";
+import {logout} from "@/api/log_in";
 
 export default function PatientHome() {
+    // Initialize
+    useEffect(() => {
+        app_init()
+    });
+
     const [isEditing, setIsEditing] = useState(false)
     const editButtonClick = () => {
         setIsEditing(!isEditing)
@@ -254,7 +258,7 @@ export default function PatientHome() {
 
             <div className={"bg-white min-h-screen flex flex-col relative"}>
                 <header className="absolute inset-x-0 top-0 z-50 bg-[#2D9298] shadow-xl">
-                    <div className="mx-auto">
+                    <div className="mx-auto flex flex-row justify-between">
                         <div className="pt-2 pb-2 lg:max-w-4xl lg:pl-8 lg:pr-0">
                             <nav className="flex items-center justify-between lg:justify-start gap-x-2" aria-label="Global">
                                 <a href="#" className="-m-1.5 p-1.5">
@@ -274,6 +278,7 @@ export default function PatientHome() {
 
                             </nav>
                         </div>
+                        <div className={"pt-5 pb-2 pr-5 text-md font-semibold text-white cursor-pointer"} onClick={logout}>Log Out</div>
                     </div>
                 </header>
                 <div className={"pt-[60px] min-h-[389px] bg-[#5AA49F] flex justify-center"}>

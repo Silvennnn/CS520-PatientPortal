@@ -14,7 +14,6 @@ export default function Login() {
             setMode('empty')
             setWindowOpen(true)
         }
-        console.log("login")
         let data = {
             "account_name": account,
             "password": psw,

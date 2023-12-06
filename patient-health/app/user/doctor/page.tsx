@@ -1,8 +1,17 @@
 "use client";
-import React, {Fragment, useRef, useState} from "react";
+import React, {Fragment, useEffect, useRef, useState} from "react";
+import {logout} from "@/api/log_in";
+import {getCookie} from "typescript-cookie";
+import app_init from "@/app/initialize";
 // import "react-datetime/css/react-datetime.css";
 
 export default function DoctorHome() {
+
+    // Initialize
+    useEffect(() => {
+        app_init()
+    });
+
     const [isEditing, setIsEditing] = useState(false)
     const editButtonClick = () => {
         setIsEditing(!isEditing)
@@ -10,7 +19,7 @@ export default function DoctorHome() {
 
     const [mode, setMode] = useState('schedule')
     const [scheduleWindowOpen, setScheduleWindowOpen] = useState(false)
-    const cancelButtonRef = useRef(null)
+    // const cancelButtonRef = useRef(null)
 
     const location_options = [
         { value: "UMass Health Service", label: "UMass Health Service"},
@@ -29,7 +38,7 @@ export default function DoctorHome() {
         <>
             <div className={"bg-white min-h-screen flex flex-col relative"}>
                 <header className="absolute inset-x-0 top-0 z-50 bg-[#316798] shadow-xl">
-                    <div className="mx-auto">
+                    <div className="mx-auto flex flex-row justify-between">
                         <div className="pt-2 pb-2 lg:max-w-4xl lg:pl-8 lg:pr-0">
                             <nav className="flex items-center justify-between lg:justify-start gap-x-2" aria-label="Global">
                                 <a href="#" className="-m-1.5 p-1.5">
@@ -49,6 +58,7 @@ export default function DoctorHome() {
 
                             </nav>
                         </div>
+                        <div className={"pt-5 pb-2 pr-5 text-md font-semibold text-white cursor-pointer"} onClick={logout}>Log Out</div>
                     </div>
                 </header>
                 <div className={"pt-[60px] min-h-[389px] bg-[#5C90B6] flex justify-center"}>
