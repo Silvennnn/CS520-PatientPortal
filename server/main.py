@@ -279,3 +279,13 @@ def update_medical_record_by_uuid(
     )
     return parse_medical_record(db=db, medical_record=updated_medical_record)
 
+@app.delete("/meicalRecord/deleteMedicalRecordByUUID")
+def delete_medical_record_by_uuid(
+        token: str,
+        medical_record_uuid: UUID,
+        db: Session = Depends(get_db),
+):
+    return fastapi_medical_record_crud.delete_medical_record_by_uuid(
+        db=db, token=token, medical_record_uuid=medical_record_uuid
+    )
+

@@ -181,3 +181,36 @@ class MedicalRecordCRUD:
             # raise utils.DatabaseCommitError(e)
         finally:
             return updated_record
+
+
+    def delete_medical_record_by_uuid(self, db: Session, token: str, medical_record_uuid: UUID):
+        current_user = get_user_by_token(db=db, token=token)
+        if current_user.account_type == 0:
+            raise HTTPException(
+                status_code=401,
+                detail="Patient cannot delete medical record",
+            )
+        stmt = db.query(MedicalRecord).filter(
+            MedicalRecord.medical_record_uuid == medical_record_uuid
+        )
+        current_medical_record = stmt.first()
+        if current_medical_record is None:
+            raise HTTPException(
+                status_code=401,
+                detail="The medical record uuid you provide is invalid",
+            )
+        if current_medical_record.doctor_uuid != current_user.user_uuid:
+            raise HTTPException(
+                status_code=401,
+                detail="This medical record does not belongs to you",
+            )
+        stmt.delete()
+        result_entry = None
+        try:
+            db.commit()
+            result_entry = stmt.first()
+        except Exception as e:
+            print(e)
+            # raise utils.DatabaseCommitError(e)
+        finally:
+            return result_entry
