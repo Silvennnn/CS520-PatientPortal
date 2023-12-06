@@ -233,7 +233,7 @@ def create_medical_record(
     return parse_medical_record(db=db, medical_record=created_medical_record)
 
 
-@app.get("/medicalRecord/getMedicalRecordByAccountName")
+@app.get("/medicalRecord/getMedicalRecordByAccountName", response_model=List[ReturnMedicalRecordSchemas])
 def get_medical_record_by_account_name(
         token: str,
         account_name: str,
@@ -246,3 +246,36 @@ def get_medical_record_by_account_name(
     )
 
     return passe_list_of_medical_records(db=db, medical_records=medical_records)
+
+
+@app.get("/medicalRecord/getMedicalRecordByToken", response_model=List[ReturnMedicalRecordSchemas])
+def get_medical_record_by_token(
+        token: str,
+        db: Session = Depends(get_db),
+):
+    medical_records = fastapi_medical_record_crud.get_medical_records_by_token(
+        db=db,
+        token=token,
+    )
+
+    return passe_list_of_medical_records(db=db, medical_records=medical_records)
+
+
+@app.post(
+    "/medicalRecord/updateMedicalRecordByUUID/",
+    response_model=ReturnMedicalRecordSchemas,
+)
+def update_medical_record_by_uuid(
+        token: str,
+        medical_record_uuid: UUID,
+        update_medical_record_schemas: UpdateMedicalRecordSchemas,
+        db: Session = Depends(get_db),
+):
+    updated_medical_record = fastapi_medical_record_crud.update_medical_record_By_UUID(
+        db=db,
+        token=token,
+        medical_record_uuid=medical_record_uuid,
+        update_medical_record_schemas=update_medical_record_schemas,
+    )
+    return parse_medical_record(db=db, medical_record=updated_medical_record)
+
