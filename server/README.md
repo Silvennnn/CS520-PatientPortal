@@ -5,7 +5,6 @@
 ### Installation for server
 `python -m pip install -r requirements.txt`
 
-
 ## Run
 
 ### Using pre-configured py file
@@ -15,6 +14,8 @@
 `uvicorn server.main:app --reload --log-config log_config.ini`
 
 ## Tutorial Link
+
+[API_docs] (http://127.0.0.1:8000/docs)
 
 [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 

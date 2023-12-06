@@ -1,4 +1,14 @@
+"use client";
+import React, {useState} from "react";
+
 export default function Registry() {
+
+    const account_type_option = [
+        { value: "patient", label: "Patient Account"},
+        { value: "doctor", label: "Doctor Account"},
+    ]
+
+    const [accountType, setAccountType] = useState(account_type_option[0]["value"])
     return (
         <>
             {/*
@@ -48,6 +58,34 @@ export default function Registry() {
                     <div className="mx-auto w-[1080px]">
                         <form>
                             <div className={"space-y-12"}>
+                                <div className="grid grid-cols-1 gap-x-10 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
+                                    <div className={"w-full"}>
+                                        <h2 className="text-base font-semibold leading-7 text-gray-900">Account Type</h2>
+                                        <p className="mt-1 text-sm leading-6 text-gray-600">
+                                            Are you Doctor or Patient?
+                                        </p>
+                                    </div>
+
+                                    <div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
+                                        <div className="sm:col-span-4">
+                                            <select
+                                                id="account_type"
+                                                name="account_type"
+                                                className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                defaultValue={account_type_option[0]["label"]}
+                                                onChange={e => {
+                                                    setAccountType(e.target.value)
+                                                }}
+                                            >
+                                                {
+                                                    account_type_option.map(e => (<option>{e["label"]}</option>))
+                                                }
+                                            </select>
+                                        </div>
+
+
+                                    </div>
+                                </div>
                                 <div className="grid grid-cols-1 gap-x-10 gap-y-10 border-b border-gray-900/10 pb-12 md:grid-cols-3">
                                     <div className={"w-full"}>
                                         <h2 className="text-base font-semibold leading-7 text-gray-900">Account Information</h2>
