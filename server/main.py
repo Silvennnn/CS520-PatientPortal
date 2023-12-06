@@ -52,7 +52,7 @@ def get_db():
         db.close()
 
 
-@app.post("/login/access-token", response_model=LoggedInUser)
+@app.post("/login/access-token/", response_model=LoggedInUser)
 def login_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
@@ -111,7 +111,7 @@ def get_user_by_account_name(
     return parse_obj_as(UserProfileSchemas, query_user)
 
 
-@app.post("/user/updateUserProfile", response_model=UserProfileSchemas)
+@app.post("/user/updateUserProfile/", response_model=UserProfileSchemas)
 def update_user_profile(
         token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
 ):
@@ -121,7 +121,7 @@ def update_user_profile(
     return parse_obj_as(UserProfileSchemas, updated_user)
 
 
-@app.post("/appointment/createAppointment", response_model=ReturnAppointmentSchemas)
+@app.post("/appointment/createAppointment/", response_model=ReturnAppointmentSchemas)
 def create_Appointment(
         token: str,
         create_appointment_schemas: CreateAppointmentSchemas,
@@ -134,7 +134,7 @@ def create_Appointment(
 
 
 @app.get(
-    "/appointment/getAppointmentByToken", response_model=List[ReturnAppointmentSchemas]
+    "/appointment/getAppointmentByToken/", response_model=List[ReturnAppointmentSchemas]
 )
 def get_appointments_by_token(
         token: str,
@@ -148,7 +148,7 @@ def get_appointments_by_token(
 
 
 @app.get(
-    "/appointment/getAppointmentByAccountName",
+    "/appointment/getAppointmentByAccountName/",
     response_model=List[ReturnAppointmentSchemas],
 )
 def get_appointments_by_account_name(
@@ -210,7 +210,7 @@ def cancel_appointment_by_uuid(
     return parse_apointment(db, confirmed_appointment)
 
 
-@app.delete("/appointment/deleteAppointmentByUUID")
+@app.delete("/appointment/deleteAppointmentByUUID/")
 def delete_appointment_by_uuid(
         token: str,
         appointment_uuid: UUID,
@@ -221,7 +221,7 @@ def delete_appointment_by_uuid(
     )
 
 
-@app.post("/medicalRecord/createMedicalRecord", response_model=ReturnMedicalRecordSchemas)
+@app.post("/medicalRecord/createMedicalRecord/", response_model=ReturnMedicalRecordSchemas)
 def create_medical_record(
         token: str,
         create_medical_record_schemas: CreateMedicalRecordSchemas,
@@ -233,7 +233,7 @@ def create_medical_record(
     return parse_medical_record(db=db, medical_record=created_medical_record)
 
 
-@app.get("/medicalRecord/getMedicalRecordByAccountName", response_model=List[ReturnMedicalRecordSchemas])
+@app.get("/medicalRecord/getMedicalRecordByAccountName/", response_model=List[ReturnMedicalRecordSchemas])
 def get_medical_record_by_account_name(
         token: str,
         account_name: str,
@@ -248,7 +248,7 @@ def get_medical_record_by_account_name(
     return passe_list_of_medical_records(db=db, medical_records=medical_records)
 
 
-@app.get("/medicalRecord/getMedicalRecordByToken", response_model=List[ReturnMedicalRecordSchemas])
+@app.get("/medicalRecord/getMedicalRecordByToken/", response_model=List[ReturnMedicalRecordSchemas])
 def get_medical_record_by_token(
         token: str,
         db: Session = Depends(get_db),
@@ -279,7 +279,7 @@ def update_medical_record_by_uuid(
     )
     return parse_medical_record(db=db, medical_record=updated_medical_record)
 
-@app.delete("/meicalRecord/deleteMedicalRecordByUUID")
+@app.delete("/meicalRecord/deleteMedicalRecordByUUID/")
 def delete_medical_record_by_uuid(
         token: str,
         medical_record_uuid: UUID,
