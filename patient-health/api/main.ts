@@ -42,27 +42,25 @@ export async function registerUser(user: User){
     }
 }
 
-//
-// registerUser(testUser)
-
 export async function login(form: Form){
     const response = await axios.post(baseURL + "/login/access-token",
-        form
+        new URLSearchParams(form as any).toString()
     , {
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/x-www-form-urlencoded"
         }
         }
     );
     if(response){
         const dt = response.data
-        console.log(dt)
+        return dt
     }
 }
 
 //Test
 const form : Form = {
-    'username': "test108",
+    'username': "test112",
     'password': "123",
 }
+
 login(form)

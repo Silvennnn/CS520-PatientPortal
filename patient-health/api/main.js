@@ -66,16 +66,27 @@ function registerUser(user) {
     });
 }
 exports.registerUser = registerUser;
-//
+// const testUser: User = {
+//     "account_name": 'test115',
+//   "password": "string",
+//   "account_type": 0,
+//   "first_name": "G",
+//   "last_name": "D",
+//   "middle_name": "string",
+//   "phone_number": "string",
+//   "date_of_birth": "2023-05-11",
+//   "gender": "string",
+//   "address": [],
+// }
 // registerUser(testUser)
 function login(form) {
     return __awaiter(this, void 0, void 0, function () {
         var response, dt;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, axios_1.default.post(exports.baseURL + "/login/access-token", form, {
+                case 0: return [4 /*yield*/, axios_1.default.post(exports.baseURL + "/login/access-token", new URLSearchParams(form).toString(), {
                         headers: {
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/x-www-form-urlencoded"
                         }
                     })];
                 case 1:
@@ -92,7 +103,7 @@ function login(form) {
 exports.login = login;
 //Test
 var form = {
-    'username': "test108",
+    'username': "test112",
     'password': "123",
 };
 login(form);
