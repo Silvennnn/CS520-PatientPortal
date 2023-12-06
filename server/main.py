@@ -39,9 +39,6 @@ origins = [
     "http://localhost:8080",
 ]
 
-
-
-
 logging.getLogger("fastapi")
 
 Base.metadata.create_all(bind=engine)
@@ -50,10 +47,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_origins=['*']
 )
 
 fastapi_user_crud = UserCRUD()
@@ -61,7 +58,6 @@ fastapi_user_crud = UserCRUD()
 fastapi_appointment_crud = AppointmentCRUD()
 
 fastapi_medical_record_crud = MedicalRecordCRUD()
-
 
 def get_db():
     db = SessionLocal()
