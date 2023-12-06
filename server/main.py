@@ -2,6 +2,7 @@ from server.database.models import Base
 from server.database.postgresql import engine, SessionLocal
 from server.crud.user_crud import UserCRUD
 from server.crud.appointment_crud import AppointmentCRUD
+from server.crud.medical_record_crud import MedicalRecordCRUD
 import logging
 from server.schemas.appointment_schemas import (
     CreateAppointmentSchemas,
@@ -9,6 +10,11 @@ from server.schemas.appointment_schemas import (
     UpdateAppointmentSchemas,
 )
 from server.schemas.user_schemas import *
+from server.schemas.medical_record_schemas import (
+    CreateMedicalRecordSchemas,
+    UpdateMedicalRecordSchemas,
+    ReturnMedicalRecordSchemas,
+)
 from server.utils import security
 from datetime import timedelta
 from sqlalchemy.orm import Session
@@ -19,7 +25,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from server.utils.config import settings
 from server.crud.crud_utils import (
     parse_list_of_appointment,
+    passe_list_of_medical_records,
     parse_apointment,
+    parse_medical_record,
     get_by_account_name,
     get_user_by_token,
 )
@@ -52,6 +60,8 @@ fastapi_user_crud = UserCRUD()
 
 fastapi_appointment_crud = AppointmentCRUD()
 
+fastapi_medical_record_crud = MedicalRecordCRUD()
+
 
 def get_db():
     db = SessionLocal()
@@ -63,7 +73,7 @@ def get_db():
 
 @app.post("/login/access-token", response_model=LoggedInUser)
 def login_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+        form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     user = fastapi_user_crud.authenticate_user(
         db, form_data.username, form_data.password
@@ -110,7 +120,7 @@ def get_me_by_token(token: str, db: Session = Depends(get_db)):
 
 @app.get("/user/getUserByAccountName/", response_model=UserProfileSchemas)
 def get_user_by_account_name(
-    account_name: str, token: str, db: Session = Depends(get_db)
+        account_name: str, token: str, db: Session = Depends(get_db)
 ):
     query_user = fastapi_user_crud.get_user_by_account_name_and_token(
         db=db, token=token, account_name=account_name
@@ -122,7 +132,7 @@ def get_user_by_account_name(
 
 @app.post("/user/updateUserProfile", response_model=UserProfileSchemas)
 def update_user_profile(
-    token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
+        token: str, update_user_schemas: UpdateUserSchemas, db: Session = Depends(get_db)
 ):
     updated_user = fastapi_user_crud.update_user_info(
         db=db, token=token, update_user_schemas=update_user_schemas
@@ -132,9 +142,9 @@ def update_user_profile(
 
 @app.post("/appointment/createAppointment", response_model=ReturnAppointmentSchemas)
 def create_Appointment(
-    token: str,
-    create_appointment_schemas: CreateAppointmentSchemas,
-    db: Session = Depends(get_db),
+        token: str,
+        create_appointment_schemas: CreateAppointmentSchemas,
+        db: Session = Depends(get_db),
 ):
     new_appointment = fastapi_appointment_crud.create_appointment(
         db=db, token=token, create_appointment_schemas=create_appointment_schemas
@@ -146,8 +156,8 @@ def create_Appointment(
     "/appointment/getAppointmentByToken", response_model=List[ReturnAppointmentSchemas]
 )
 def get_appointments_by_token(
-    token: str,
-    db: Session = Depends(get_db),
+        token: str,
+        db: Session = Depends(get_db),
 ):
     user_appointments = fastapi_appointment_crud.get_appointments_by_token(
         db=db, token=token
@@ -161,9 +171,9 @@ def get_appointments_by_token(
     response_model=List[ReturnAppointmentSchemas],
 )
 def get_appointments_by_account_name(
-    token: str,
-    account_name: str,
-    db: Session = Depends(get_db),
+        token: str,
+        account_name: str,
+        db: Session = Depends(get_db),
 ):
     user_appointments = fastapi_appointment_crud.get_appointments_by_account_name(
         db=db, token=token, account_name=account_name
@@ -171,17 +181,120 @@ def get_appointments_by_account_name(
 
     return parse_list_of_appointment(db=db, appointments=user_appointments)
 
+
 @app.post(
     "/appointment/updateAppointmentByUUID/",
     response_model=ReturnAppointmentSchemas,
 )
 def update_appointment_by_uuid(
-    token:str,
-    appointment_uuid: UUID,
-    update_appointment_schemas: UpdateAppointmentSchemas,
-    db: Session = Depends(get_db),
+        token: str,
+        appointment_uuid: UUID,
+        update_appointment_schemas: UpdateAppointmentSchemas,
+        db: Session = Depends(get_db),
 ):
     updated_appointment = fastapi_appointment_crud.update_Appointment_By_UUID(
-        db=db, token=token,appointment_uuid=appointment_uuid, update_appointment_schemas=update_appointment_schemas
+        db=db,
+        token=token,
+        appointment_uuid=appointment_uuid,
+        update_appointment_schemas=update_appointment_schemas,
     )
     return parse_apointment(db, updated_appointment)
+
+
+@app.post(
+    "/appointment/confirmAppointmentByUUID/", response_model=ReturnAppointmentSchemas
+)
+def confirm_appointment_by_uuid(
+        token: str,
+        appointment_uuid: UUID,
+        db: Session = Depends(get_db),
+):
+    confirmed_appointment = fastapi_appointment_crud.confirm_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )
+    return parse_apointment(db, confirmed_appointment)
+
+
+@app.post(
+    "/appointment/cancelAppointmentByUUID/", response_model=ReturnAppointmentSchemas
+)
+def cancel_appointment_by_uuid(
+        token: str,
+        appointment_uuid: UUID,
+        db: Session = Depends(get_db),
+):
+    confirmed_appointment = fastapi_appointment_crud.cancel_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )
+    return parse_apointment(db, confirmed_appointment)
+
+
+@app.delete("/appointment/deleteAppointmentByUUID")
+def delete_appointment_by_uuid(
+        token: str,
+        appointment_uuid: UUID,
+        db: Session = Depends(get_db),
+):
+    return fastapi_appointment_crud.delete_appointment_by_uuid(
+        db=db, token=token, appointment_uuid=appointment_uuid
+    )
+
+
+@app.post("/medicalRecord/createMedicalRecord", response_model=ReturnMedicalRecordSchemas)
+def create_medical_record(
+        token: str,
+        create_medical_record_schemas: CreateMedicalRecordSchemas,
+        db: Session = Depends(get_db),
+):
+    created_medical_record = fastapi_medical_record_crud.create_medical_record(
+        db=db, token=token, create_medical_record_schemas=create_medical_record_schemas
+    )
+    return parse_medical_record(db=db, medical_record=created_medical_record)
+
+
+@app.get("/medicalRecord/getMedicalRecordByAccountName", response_model=List[ReturnMedicalRecordSchemas])
+def get_medical_record_by_account_name(
+        token: str,
+        account_name: str,
+        db: Session = Depends(get_db),
+):
+    medical_records = fastapi_medical_record_crud.get_medical_records_by_account_name(
+        db=db,
+        token=token,
+        account_name=account_name
+    )
+
+    return passe_list_of_medical_records(db=db, medical_records=medical_records)
+
+
+@app.get("/medicalRecord/getMedicalRecordByToken", response_model=List[ReturnMedicalRecordSchemas])
+def get_medical_record_by_token(
+        token: str,
+        db: Session = Depends(get_db),
+):
+    medical_records = fastapi_medical_record_crud.get_medical_records_by_token(
+        db=db,
+        token=token,
+    )
+
+    return passe_list_of_medical_records(db=db, medical_records=medical_records)
+
+
+@app.post(
+    "/medicalRecord/updateMedicalRecordByUUID/",
+    response_model=ReturnMedicalRecordSchemas,
+)
+def update_medical_record_by_uuid(
+        token: str,
+        medical_record_uuid: UUID,
+        update_medical_record_schemas: UpdateMedicalRecordSchemas,
+        db: Session = Depends(get_db),
+):
+    updated_medical_record = fastapi_medical_record_crud.update_medical_record_By_UUID(
+        db=db,
+        token=token,
+        medical_record_uuid=medical_record_uuid,
+        update_medical_record_schemas=update_medical_record_schemas,
+    )
+    return parse_medical_record(db=db, medical_record=updated_medical_record)
+
