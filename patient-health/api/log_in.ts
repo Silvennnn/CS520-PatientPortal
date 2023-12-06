@@ -14,8 +14,8 @@ export interface User {
 }
 
 
-export interface Form{
-    "username": string,
+export interface User_Form {
+    "account_name": string,
     "password": string,
 }
 
@@ -47,27 +47,28 @@ export async function registerUser(user: User){
     }
 }
 
-export async function login(form: Form){
-    const response = await fetch(baseURL + "/login/access-token",{
-        method: "POST",
+// export async function login(form: User_Form){
+//     const response = await fetch(baseURL + "/login/access-token",{
+//         method: "POST",
+//         headers: {
+//             "Content-Type": "application/json"
+//         },
+//         body:  JSON.stringify(form)
+//     }
+//     );
+//     if(response.ok){
+//         const dt = response.json();
+//         return dt
+//     }
+// }
+
+export async function login_call(form) {
+    const response = await fetch(baseURL + "/login/access-token/", {
+        method: 'POST',
         headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
+            'Content-Type': 'application/json',
         },
-        body:  new URLSearchParams(form as any).toString()
-    }
-    );
-    if(response.ok){
-        const dt = response.json();
-        return dt
-    }
+        body: JSON.stringify(form),
+    });
+    return response
 }
-
-
-
-//Test
-const form : Form = {
-    'username': "test112",
-    'password': "123",
-}
-
-login(form)
