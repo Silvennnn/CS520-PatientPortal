@@ -108,5 +108,4 @@ def is_doctor_associated_with_patient(
             .count()
             > 0
     )
-    logging.info(associated_medical_record)
     return associated_appointments or associated_medical_record
