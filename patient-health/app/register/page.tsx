@@ -1,5 +1,7 @@
 "use client";
 import React, {useState} from "react";
+import {registerUser} from "@/api/profile";
+import {User} from "@/api/profile";
 
 export default function Registry() {
 
@@ -8,7 +10,50 @@ export default function Registry() {
         { value: "doctor", label: "Doctor Account"},
     ]
 
+    const [address, setAddress] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [zip, setZip] = useState('');
+
+
     const [accountType, setAccountType] = useState(account_type_option[0]["value"])
+
+    const submitButtonClick = async () => {
+        let data = {
+              "account_name": '',
+              "password": password,
+              "account_type": accountType,
+              "first_name": firstName,
+              "last_name": lastName,
+              "middle_name": '',
+              "phone_number": '',
+              "date_of_birth": '',
+              "gender": '',
+              "address": address,
+        }
+        try{
+            const response = await registerUser(data);
+            console.log(response);
+            if(response.status == 422){
+                console.log("error");
+            }
+            else{
+                console.log('User Registered');
+                window.location.href = '/login';
+            }
+
+        }
+        catch (error) {
+            console.error('Error during login:', error);
+        }
+    }
+
+
+
     return (
         <>
             {/*
