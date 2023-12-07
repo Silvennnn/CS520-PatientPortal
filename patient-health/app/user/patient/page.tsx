@@ -4,12 +4,80 @@ import Link from 'next/link';
 import {Dialog, Transition} from "@headlessui/react";
 import app_init from "@/app/initialize";
 import {logout} from "@/api/log_in";
+import {baseURL, getUserProfileByToken, updateUserProfile} from "@/api/profile";
+import { getCookie, setCookie } from 'typescript-cookie'
+import {json} from "stream/consumers";
+import {MutatingDots} from "react-loader-spinner";
+import {
+    Appointment,
+    cancelAppointmentByUUID,
+    createAppointment,
+    getAppointmentByToken,
+    updateAppointmentByUUID
+} from "@/api/appointment";
 
 export default function PatientHome() {
+    const [userProfile, setUserProfile] = useState({
+        "user_uuid": "",
+        "account_name": "",
+        "account_type": 0,
+        "first_name": "",
+        "last_name": "",
+        "middle_name": "",
+        "phone_number": "",
+        "date_of_birth": "",
+        "gender": "male",
+        "address": []
+    })
+    const [userAppointmentList, setUserAppointmentList] = useState([])
+    const [accessToken, setAccessToken] = useState('')
+    const [userProfileAddress, setProfileAddress] = useState('')
+    const [userContact, setUserContact] = useState('')
+
+
     // Initialize
     useEffect(() => {
         app_init()
-    });
+        let token = getCookie("access_token")
+        setAccessToken(token)
+
+        // load profile
+        const getUserProfileByToken = async (token: string) => {
+            const response = await fetch(baseURL + `/user/getMe?token=${token}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            })
+            const json = await response.json()
+            return json
+        }
+
+        // load appointment
+        const getAppointmentByToken = async (token: string) => {
+            const response = await fetch(baseURL + `/appointment/getAppointmentByToken/?token=${token}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            })
+            const json = await response.json()
+            return json
+        }
+
+        getUserProfileByToken(token).then(r => {
+            console.log("Profile loaded!")
+            setUserProfile(r)
+            setProfileAddress(r.address)
+            setUserContact(r.phone_number)
+        })
+
+        getAppointmentByToken(token).then(r => {
+            console.log("Appointment loaded!")
+            setUserAppointmentList(r)
+        })
+    }, []);
+
 
     const [isEditing, setIsEditing] = useState(false)
     const editButtonClick = () => {
@@ -17,7 +85,7 @@ export default function PatientHome() {
     }
 
     const [mode, setMode] = useState('schedule')
-    const [scheduleWindowOpen, setScheduleWindowOpen] = useState(false)
+    const [windowOpen, setWindowOpen] = useState(false)
     const cancelButtonRef = useRef(null)
 
     const location_options = [
@@ -27,16 +95,137 @@ export default function PatientHome() {
     ]
 
     const doctor_options = [
-        { value: "John Smith", label: "John Smith"},
-        { value: "Alex Chen", label: "Alex Chen"},
-        { value: "Chris Wang", label: "Chris Wang"}
+        { value: "doctor_3", label: "John Smith"},
+        { value: "doctor_4", label: "JR Smith"},
+        { value: "doctor_5", label: "Kevin Zhang"},
+        { value: "doctor_2", label: "Kevin Zhang"},
+        { value: "doctor_1", label: "Scissors Johnson"}
     ]
 
+    const getDoctorNameByValue = (value) => {
+        const doctor = doctor_options.find(doctor => doctor.value === value);
+        return doctor.label
+    }
+
+    // function
+    const profileUpdateButtonClick = async () => {
+        setMode('loading')
+        setWindowOpen(true)
+        try {
+            let response = await updateUserProfile(accessToken, userProfileAddress, userContact)
+            if (response.status === 200) {
+                const data = response.json().then(
+                    e => {
+                        setUserProfile(e.address)
+                        setUserContact(e.phone_number)
+                        setIsEditing(false)
+                        setWindowOpen(false)
+                    }
+                )
+            }
+        } catch (error) {
+            console.error('Error during update profile:', error);
+        }
+    }
+
+    // Schedule Appointment
+    const [newAppLocation, setNewAppLocation] = useState(location_options[0].value)
+    const [newAppDoctor, setNewAppDoctor] = useState(doctor_options[0].value)
+    const [newAppTime, setNewAppTime] = useState('')
+    const [newAppMessage, setNewAppMessage] = useState('')
+    const [selectAppIndex, setSelectAppIndex] = useState(-1)
+    const [selectApp, setSelectApp] = useState({
+        "datetime": '',
+        "location": '',
+        "doctor_account_name": '',
+        "patient_account_name": '',
+        "message": '',
+        "status": ''
+    })
+    const [modAppLocation, setModAppLocation] = useState(location_options[0].value)
+    const [modAppDoctor, setModAppDoctor] = useState(doctor_options[0].value)
+    const [modAppTime, setModAppTime] = useState('')
+    const [modAppMessage, setModAppMessage] = useState('')
+    const scheduleAppointmentClick = async () => {
+        setMode('loading')
+        setWindowOpen(true)
+        try {
+            const data:Appointment ={
+                "datetime": newAppTime,
+                    "location": newAppLocation,
+                    "doctor_account_name": newAppDoctor,
+                    "patient_account_name": userProfile.account_name,
+                    "message": newAppMessage,
+                    "status": 0
+            }
+
+            let response = await createAppointment(accessToken, data).then(
+                e => {
+                    setWindowOpen(false)
+                    window.location.reload()
+                }
+            )
+        } catch (error) {
+            console.error('Error during update profile:', error);
+        }
+    }
+
+    // Appointment Cancellation
+    const appointmentCancelClick = (app_index) => {
+        setSelectAppIndex(app_index)
+        setMode('cancel')
+        setWindowOpen(true)
+    }
+
+    const appointmentCancelConfirm = async () => {
+        setMode('loading')
+        setWindowOpen(true)
+        const target_app_uuid = userAppointmentList[selectAppIndex].appointment_uuid
+        try {
+            let response = await cancelAppointmentByUUID(accessToken, target_app_uuid).then(
+                e => {
+                    setWindowOpen(false)
+                    window.location.reload()
+                }
+            )
+        } catch (error) {
+            console.error('Error during appointment cancellation:', error);
+        }
+    }
+
+    // Appointment Reschedule
+    const appointmentRescheduleClick = (app_index) => {
+        setSelectApp(userAppointmentList[app_index])
+        setSelectAppIndex(app_index)
+        setModAppLocation(selectApp.location)
+        setModAppTime(selectApp.datetime)
+        setModAppDoctor(selectApp.doctor_account_name)
+        setModAppMessage(selectApp.message)
+        console.log(selectApp)
+        setMode('reschedule')
+        setWindowOpen(true)
+    }
+
+    const appointmentRescheduleConfirm = async () => {
+        setMode('loading')
+        setWindowOpen(true)
+        const target_app_uuid = userAppointmentList[selectAppIndex].appointment_uuid
+        try {
+            let response = await updateAppointmentByUUID(accessToken, target_app_uuid, modAppTime, modAppLocation, modAppMessage).then(
+                e => {
+                    setWindowOpen(false)
+                    window.location.reload()
+                }
+            )
+        } catch (error) {
+            console.error('Error during appointment cancellation:', error);
+        }
+    }
 
     return (
         <>
-            <Transition.Root show={scheduleWindowOpen} as={Fragment}>
-                <Dialog className="relative z-10" initialFocus={cancelButtonRef} onClose={setScheduleWindowOpen}>
+            <Transition.Root show={windowOpen} as={Fragment}>
+                <Dialog className="relative z-10" initialFocus={cancelButtonRef} onClose={setWindowOpen}>
                     <Transition.Child
                         as={Fragment}
                         enter="ease-out duration-300"
@@ -78,10 +267,15 @@ export default function PatientHome() {
                                                                     id="new_appointment_location"
                                                                     name="new_appointment_location"
                                                                     className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={location_options[0]["label"]}
+                                                                    value={newAppLocation}
+                                                                    onChange={e => {
+                                                                        console.log(e.target.value)
+                                                                        setNewAppLocation(e.target.value.toString())
+                                                                        }
+                                                                    }
                                                                 >
                                                                     {
-                                                                        location_options.map(e => (<option>{e["label"]}</option>))
+                                                                        location_options.map(e => (<option key={e.value}>{e["label"]}</option>))
                                                                     }
                                                                 </select>
                                                             </div>
@@ -92,10 +286,14 @@ export default function PatientHome() {
                                                                     id="new_appointment_doctor"
                                                                     name="new_appointment_doctor"
                                                                     className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={doctor_options[0]["label"]}
+                                                                    value={newAppDoctor}
+                                                                    onChange={e => {
+                                                                        setNewAppDoctor(e.target.value)
+                                                                     }
+                                                                    }
                                                                 >
                                                                     {
-                                                                        doctor_options.map(e => (<option>{e["label"]}</option>))
+                                                                        doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
                                                                     }
                                                                 </select>
                                                             </div>
@@ -105,6 +303,11 @@ export default function PatientHome() {
                                                             <div className={"flex flex-row gap-x-3 items-center w-full"}>
                                                                 <label htmlFor="new_appointment_datetime" className="text-sm font-medium  text-gray-900 w-[60px] text-start">Time</label>
                                                                 <input type="datetime-local" id="new_appointment_datetime"
+                                                                       value={newAppTime}
+                                                                       onChange={e => {
+                                                                           setNewAppTime(e.target.value.toString())
+                                                                       }
+                                                                       }
                                                                        name="new_appointment_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
                                                             </div>
 
@@ -115,8 +318,12 @@ export default function PatientHome() {
                                                                     name="new_appointment_message"
                                                                     rows={3}
                                                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={''}
                                                                     placeholder={"Describe your symptom here ..."}
+                                                                    value={newAppMessage}
+                                                                    onChange={e => {
+                                                                        setNewAppMessage(e.target.value)
+                                                                    }
+                                                                    }
                                                                 />
                                                             </div>
                                                         </div>
@@ -126,15 +333,14 @@ export default function PatientHome() {
                                                     <button
                                                         type="button"
                                                         className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
-                                                        onClick={() => setScheduleWindowOpen(false)}
+                                                        onClick={() => scheduleAppointmentClick()}
                                                     >
                                                         Schedule
                                                     </button>
                                                     <button
                                                         type="button"
                                                         className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
-                                                        onClick={() => setScheduleWindowOpen(false)}
-                                                        ref={cancelButtonRef}
+                                                        onClick={() => setWindowOpen(false)}
                                                     >
                                                         Cancel
                                                     </button>
@@ -171,7 +377,7 @@ export default function PatientHome() {
                                                                     defaultValue={location_options[0]["label"]}
                                                                 >
                                                                     {
-                                                                        location_options.map(e => (<option>{e["label"]}</option>))
+                                                                        location_options.map(e => (<option key={e.value}>{e["label"]}</option>))
                                                                     }
                                                                 </select>
                                                             </div>
@@ -185,7 +391,7 @@ export default function PatientHome() {
                                                                     defaultValue={doctor_options[0]["label"]}
                                                                 >
                                                                     {
-                                                                        doctor_options.map(e => (<option>{e["label"]}</option>))
+                                                                        doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
                                                                     }
                                                                 </select>
                                                             </div>
@@ -233,14 +439,14 @@ export default function PatientHome() {
                                                     <button
                                                         type="button"
                                                         className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
-                                                        onClick={() => setScheduleWindowOpen(false)}
+                                                        onClick={() => setWindowOpen(false)}
                                                     >
                                                         Schedule
                                                     </button>
                                                     <button
                                                         type="button"
                                                         className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
-                                                        onClick={() => setScheduleWindowOpen(false)}
+                                                        onClick={() => setWindowOpen(false)}
                                                         ref={cancelButtonRef}
                                                     >
                                                         Cancel
@@ -249,6 +455,181 @@ export default function PatientHome() {
                                             </div>
                                         )
                                     }
+                                    {
+                                        mode == 'loading' && (
+                                            <div>
+                                                <div className="mt-3 text-center sm:mt-5">
+                                                    <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                        Loading ...
+                                                    </Dialog.Title>
+                                                </div>
+                                                <div className="mt-5 w-full h-full flex flex-row justify-center items-center">
+                                                    <MutatingDots
+                                                        height="100"
+                                                        width="100"
+                                                        color="#5AA49F"
+                                                        secondaryColor= '#5AA49F'
+                                                        radius='12.5'
+                                                        ariaLabel="mutating-dots-loading"
+                                                        wrapperStyle={{}}
+                                                        wrapperClass=""
+                                                        visible={true}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        mode == 'error' && (
+                                            <div>
+                                                <div>
+                                                    <div className="mt-3 text-center sm:mt-5">
+                                                        <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                            Something is wrong!
+                                                        </Dialog.Title>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-5">
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => setWindowOpen(false)}
+                                                        ref={cancelButtonRef}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        mode == 'cancel' && (
+                                            <div>
+                                                <div>
+                                                    <div className="mt-3 text-center sm:mt-5">
+                                                        <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                            Confirm Appointment Cancellation?
+                                                        </Dialog.Title>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-5 flex flex-row gap-x-5">
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => setWindowOpen(false)}
+                                                        ref={cancelButtonRef}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-700 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => appointmentCancelConfirm()}
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        mode == 'reschedule' && (
+                                            <div>
+                                                <div>
+                                                    <div className="mt-3 text-center sm:mt-5">
+                                                        <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                            Modify Your Appointment
+                                                        </Dialog.Title>
+                                                        <div className="mt-4 flex flex-col items-start gap-y-4 ">
+                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                <label htmlFor="location" className="text-sm font-medium  text-gray-900 w-[60px] text-start">
+                                                                    Location
+                                                                </label>
+                                                                <select
+                                                                    id="new_appointment_location"
+                                                                    name="new_appointment_location"
+                                                                    className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modAppLocation}
+                                                                    onChange={e => {
+                                                                        setModAppLocation(e.target.value.toString())
+                                                                    }
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        location_options.map(e => (<option key={e.value}>{e["label"]}</option>))
+                                                                    }
+                                                                </select>
+                                                            </div>
+
+                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                <label htmlFor="new_appointment_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>
+                                                                <select
+                                                                    id="new_appointment_doctor"
+                                                                    name="new_appointment_doctor"
+                                                                    className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modAppDoctor}
+                                                                    onChange={e => {
+                                                                        setModAppDoctor(e.target.value)
+                                                                    }
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
+                                                                    }
+                                                                </select>
+                                                            </div>
+
+
+
+                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                <label htmlFor="new_appointment_datetime" className="text-sm font-medium  text-gray-900 w-[60px] text-start">Time</label>
+                                                                <input type="datetime-local" id="new_appointment_datetime"
+                                                                       value={modAppTime}
+                                                                       onChange={e => {
+                                                                           setModAppTime(e.target.value.toString())
+                                                                       }
+                                                                       }
+                                                                       name="new_appointment_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+                                                            </div>
+
+                                                            <div className={"flex flex-col gap-y-3 w-full"}>
+                                                                <label htmlFor="new_appointment_message" className="text-sm font-medium text-gray-900 w-full text-start">Leave a Message</label>
+                                                                <textarea
+                                                                    id="new_appointment_message"
+                                                                    name="new_appointment_message"
+                                                                    rows={3}
+                                                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    placeholder={"Describe your symptom here ..."}
+                                                                    value={modAppMessage}
+                                                                    onChange={e => {
+                                                                        setModAppMessage(e.target.value)
+                                                                    }
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
+                                                        onClick={() => appointmentRescheduleConfirm()}
+                                                    >
+                                                        Reschedule
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => setWindowOpen(false)}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>
@@ -291,7 +672,7 @@ export default function PatientHome() {
                         <div className={"absolute right-0 bottom-[80px] w-[50%]"}>
                             <div className={"pl-[50px] flex flex-col"}>
                                 <div className={"tracking-tight text-[30px] font-mono font-semibold"}>
-                                    Welcome Back, <span className={"text-[33px] font-mono font-semibold text-[#FFCBA5] underline decoration-solid"}>John Smith</span> <br />How are you feeling today?
+                                    Welcome Back, <span className={"text-[33px] font-mono font-semibold text-[#FFCBA5] underline decoration-solid"}>{userProfile.first_name + ' ' + userProfile.last_name}</span> <br />How are you feeling today?
                                 </div>
                             </div>
                         </div>
@@ -309,34 +690,35 @@ export default function PatientHome() {
                                     <div className={"w-1/2 pl-2 pt-3 text-black text-[18px] font-sans flex flex-col"}>
                                         <div className={"flex flex-row gap-x-3"}>
                                             <div className={"font-bold text-black text-[18px] font-sans"}>Name: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>John Smith</div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.first_name + ' ' + userProfile.last_name}</div>
+                                        </div>
+
+                                        <div className={"flex flex-row gap-x-3"}>
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Date of Birth: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.date_of_birth}</div>
                                         </div>
                                         <div className={"flex flex-row gap-x-3"}>
                                             <div className={"font-bold text-black text-[18px] font-sans"}>Gender: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>Male</div>
-                                        </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans"}>Contact: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>413-444-1234</div>
-                                        </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans"}>Address: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>12 UMass Ave, Amherst, MA, 01002</div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.gender}</div>
                                         </div>
                                     </div>
                                     <div className={"w-1/2 pl-2 pt-3 flex flex-col"}>
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans"}>Date of Birth: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>11/20/2000</div>
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Contact: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userContact}</div>
                                         </div>
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans"}>Pronouns: </div>
-                                            <div className={"text-black text-[18px] font-sans"}>He/Him</div>
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Address: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfileAddress}</div>
                                         </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans"}>Emergency Contact:</div>
-                                            <div className={"text-black text-[18px] font-sans"}>413-444-1234</div>
-                                        </div>
+                                        {/*<div className={"flex flex-row gap-x-3"}>*/}
+                                        {/*    <div className={"font-bold text-black text-[18px] font-sans"}>Pronouns: </div>*/}
+                                        {/*    <div className={"text-black text-[18px] font-sans"}>He/Him</div>*/}
+                                        {/*</div>*/}
+                                        {/*<div className={"flex flex-row gap-x-3"}>*/}
+                                        {/*    <div className={"font-bold text-black text-[18px] font-sans"}>Emergency Contact:</div>*/}
+                                        {/*    <div className={"text-black text-[18px] font-sans"}>413-444-1234</div>*/}
+                                        {/*</div>*/}
                                         <div className={"w-full flex flex-row justify-end gap-x-3 pt-[100px]"}>
                                             <div
                                                 onClick={editButtonClick}
@@ -351,84 +733,51 @@ export default function PatientHome() {
 
                             {isEditing && (
                                 <div className={"flex flex-row min-h-full"}>
-                                    <div className={"w-2/5 pl-2 pt-3 text-black text-[18px] font-sans flex flex-col gap-y-3"}>
+                                    <div className={"w-1/2 pl-2 pt-3 text-black text-[18px] font-sans flex flex-col"}>
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Name: </div>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                id="name"
-                                                autoComplete="given-name"
-                                                value="John Smith"
-                                                className="font-semibold pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                            />
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Name: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.first_name + ' ' + userProfile.last_name}</div>
+                                        </div>
+
+                                        <div className={"flex flex-row gap-x-3"}>
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Date of Birth: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.date_of_birth}</div>
                                         </div>
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Gender: </div>
-                                            <input
-                                                type="text"
-                                                name="gender"
-                                                id="gender"
-                                                autoComplete="gender"
-                                                value="Male"
-                                                className="font-semibold pl-3 block w-2/3  rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                            />
-                                        </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Contact: </div>
-                                            <input
-                                                type="text"
-                                                name="contact"
-                                                id="contact"
-                                                autoComplete="contact"
-                                                value="413-444-1234"
-                                                className="font-semibold pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                            />
-                                        </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Address: </div>
-                                            <input
-                                                type="text"
-                                                name="address"
-                                                id="address"
-                                                autoComplete="address"
-                                                value="12 UMass Ave, Amherst, MA, 01002"
-                                                className="font-semibold pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                            />
+                                            <div className={"font-bold text-black text-[18px] font-sans"}>Gender: </div>
+                                            <div className={"text-black text-[18px] font-sans"}>{userProfile.gender}</div>
                                         </div>
                                     </div>
                                     <div className={"w-3/5 pl-2 pt-3 flex flex-col gap-y-3"}>
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[120px]"}>Date of Birth: </div>
+                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Contact: </div>
                                             <input
                                                 type="text"
-                                                name="birth"
-                                                id="birth"
-                                                autoComplete="birth"
-                                                value="11/20/2000"
-                                                className="font-semibold pl-3 block w-1/2 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                name="input_contact"
+                                                id="input_contact"
+                                                autoComplete="contact"
+                                                value={userContact}
+                                                onChange={e => {
+                                                    setUserContact(e.target.value)
+                                                }}
+                                                className="font-semibold pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             />
                                         </div>
+
+
+
                                         <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[120px]"}>Pronouns: </div>
+                                            <div className={"font-bold text-black text-[18px] font-sans w-[80px]"}>Address: </div>
                                             <input
                                                 type="text"
-                                                name="pronouns"
-                                                id="pronouns"
-                                                autoComplete="pronouns"
-                                                value="He/Him"
-                                                className="font-semibold pl-3 block w-1/2 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                            />
-                                        </div>
-                                        <div className={"flex flex-row gap-x-3"}>
-                                            <div className={"font-bold text-black text-[18px] font-sans w-[200px]"}>Emergency Contact:</div>
-                                            <input
-                                                type="text"
-                                                name="emergency"
-                                                id="emergency"
-                                                autoComplete="emergency"
-                                                value="413-444-1234"
-                                                className="font-semibold pl-3 block w-1/2 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                name="input_address"
+                                                id="input_address"
+                                                autoComplete="address"
+                                                value={userProfileAddress}
+                                                onChange={e => {
+                                                    setProfileAddress(e.target.value)
+                                                }}
+                                                className="font-semibold pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                             />
                                         </div>
                                         <div className={"flex flex-row justify-end gap-x-3 pt-[100px]"}>
@@ -439,7 +788,7 @@ export default function PatientHome() {
                                                 Cancel
                                             </div>
                                             <div
-                                                // onClick={editButtonClick}
+                                                onClick={profileUpdateButtonClick}
                                                 className="cursor-pointer  rounded-md bg-teal-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-teal-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
                                             >
                                                 Update
@@ -459,7 +808,7 @@ export default function PatientHome() {
                                 </div>
                                 <div
                                     onClick={()=>{
-                                        setScheduleWindowOpen(true)
+                                        setWindowOpen(true)
                                         setMode("schedule")
                                     }
                                 }
@@ -470,46 +819,52 @@ export default function PatientHome() {
                             </div>
 
                             <div className={"pt-5 w-[95%] flex flex-col gap-y-5"}>
-                                <div className="w-full border-t border-gray-300 shadow-lg" />
 
-                                <div className={"flex flex-col w-full pt-5"}>
-                                    <div className={"flex flex-row gap-x-3"}>
-                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Time: </div>
-                                        <div className={"text-black text-[18px] font-sans"}>11/01/2023, Wednesday 10:30AM</div>
-                                    </div>
-                                    <div className={"flex flex-row gap-x-3"}>
-                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Doctor: </div>
-                                        <div className={"text-black text-[18px] font-sans"}>John Smith</div>
-                                    </div>
-                                    <div className={"flex flex-row gap-x-3"}>
-                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Location: </div>
-                                        <div className={"text-black text-[18px] font-sans"}>UMass Health Service</div>
-                                    </div>
-                                    <div className={"flex flex-row gap-x-3"}>
-                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Message: </div>
-                                        <div className={"text-black text-[18px] font-sans"}>Message: Hello Doctor! I'm concerned about the sudden weight loss I've experienced over the last month, despite not making any changes to my diet or exercise routine.</div>
-                                    </div>
+                                {userAppointmentList.map((ele, index) => {
+                                    if (ele.status !== -1) {
+                                        return (
+                                            <div className={"w-full lex flex-col gap-y-5"} key={"appointment_" + index.toString()}>
+                                                <div className="w-full border-t border-gray-300 shadow-lg mt-5" />
 
-                                    <div className={"flex flex-row justify-end gap-x-3 pt-[100px]"}>
-                                        <div
-                                            onClick={()=>{
-                                                setMode("reschedule")
-                                            }}
-                                            className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-                                        >
-                                            Reschedule
-                                        </div>
-                                        <div
-                                            // onClick={editButtonClick}
-                                            className="cursor-pointer  rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
-                                        >
-                                            Cancel
-                                        </div>
-                                    </div>
-                                </div>
+                                                <div className={"flex flex-col w-full pt-5"}>
+                                                    <div className={"flex flex-row gap-x-3"}>
+                                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Time: </div>
+                                                        <div className={"text-black text-[18px] font-sans"}>{ele.datetime}</div>
+                                                    </div>
+                                                    <div className={"flex flex-row gap-x-3"}>
+                                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Doctor: </div>
+                                                        <div className={"text-black text-[18px] font-sans"}>{getDoctorNameByValue(ele.doctor_account_name)}</div>
+                                                    </div>
+                                                    <div className={"flex flex-row gap-x-3"}>
+                                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Location: </div>
+                                                        <div className={"text-black text-[18px] font-sans"}>{ele.location}</div>
+                                                    </div>
+                                                    <div className={"flex flex-row gap-x-3"}>
+                                                        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Message: </div>
+                                                        <div className={"text-black text-[18px] font-sans"}>{ele.message}</div>
+                                                    </div>
 
-                                <div className="w-full border-t border-gray-300 shadow-lg" />
-
+                                                    <div className={"flex flex-row justify-end gap-x-3 pt-[50px]"}>
+                                                        <div
+                                                            onClick={()=>{
+                                                                appointmentRescheduleClick(index)
+                                                            }}
+                                                            className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+                                                        >
+                                                            Reschedule
+                                                        </div>
+                                                        <div
+                                                            onClick={() => appointmentCancelClick(index)}
+                                                            className="cursor-pointer rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                                                        >
+                                                            Cancel
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                })}
                             </div>
 
                         </div>
@@ -523,7 +878,7 @@ export default function PatientHome() {
                                 </div>
                                 <div
                                     onClick={()=>{
-                                        setScheduleWindowOpen(true)
+                                        setWindowOpen(true)
                                         setMode("add_record")
                                     }
                                     }
