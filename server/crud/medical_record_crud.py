@@ -231,11 +231,11 @@ class MedicalRecordCRUD:
         self, db: Session, token: str, medical_record_uuid: UUID
     ):
         current_user = get_user_by_token(db=db, token=token)
-        if current_user.account_type == 0:
-            raise HTTPException(
-                status_code=401,
-                detail="Patient cannot delete medical record",
-            )
+        # if current_user.account_type == 0:
+        #     raise HTTPException(
+        #         status_code=401,
+        #         detail="Patient cannot delete medical record",
+        #     )
         stmt = db.query(MedicalRecord).filter(
             MedicalRecord.medical_record_uuid == medical_record_uuid
         )
@@ -245,7 +245,10 @@ class MedicalRecordCRUD:
                 status_code=401,
                 detail="The medical record uuid you provide is invalid",
             )
-        if current_medical_record.doctor_uuid != current_user.user_uuid:
+        if (
+            current_medical_record.doctor_uuid != current_user.user_uuid
+            and current_medical_record.patient_uuid != current_user.user_uuid
+        ):
             raise HTTPException(
                 status_code=401,
                 detail="This medical record does not belongs to you",
