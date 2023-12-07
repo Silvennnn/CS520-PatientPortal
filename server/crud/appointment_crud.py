@@ -40,11 +40,6 @@ class AppointmentCRUD:
                 detail="the account type does not match with corrspoding account name",
             )
 
-        if submit_user.account_type == 0 and create_appointment_schemas.status == 1:
-            raise HTTPException(
-                status_code=401, detail="patient could not confirm the appointment"
-            )
-
         if create_appointment_schemas.status == -1:
             raise HTTPException(
                 status_code=401, detail="you could not created a canceled appointment"
@@ -175,18 +170,12 @@ class AppointmentCRUD:
                     status_code=401,
                     detail="the appointment uuid you provide is not belongs to you",
                 )
-            update_field[
-                "status"
-            ] = 0  # if user changed the appointment, the appointment auto set to appending
         elif current_user.account_type == 1:
             if current_appointment.doctor_uuid != current_user.user_uuid:
                 raise HTTPException(
                     status_code=401,
                     detail="the appointment uuid you provide is not belongs to you",
                 )
-            update_field[
-                "status"
-            ] = 1  # if user changed the appointment, the appointment auto set to appending
         else:
             raise HTTPException(status_code=401, detail="unexpected user account type")
 
@@ -209,18 +198,13 @@ class AppointmentCRUD:
         finally:
             return updated_appointment
 
-    def confirm_appointment_by_uuid(
+    def complete_appointment_by_uuid(
         self,
         db: Session,
         token: str,
         appointment_uuid: UUID,
     ) -> Appointment:
         current_user = get_user_by_token(db=db, token=token)
-        if current_user.account_type != 1:
-            raise HTTPException(
-                status_code=401,
-                detail="patient cannot confirm a appointment",
-            )
         stmt = db.query(Appointment).filter(
             Appointment.appointment_uuid == appointment_uuid
         )
@@ -238,19 +222,19 @@ class AppointmentCRUD:
         if current_appointment.status != 0:
             raise HTTPException(
                 status_code=401,
-                detail="This appointment is being canceled or already confirmed",
+                detail="This appointment is being canceled or already complete",
             )
         update_field = {"status": 1}
         stmt.update(update_field, synchronize_session=False)
-        confirmed_appointment = None
+        completed_appointment = None
         try:
             db.commit()
-            confirmed_appointment = stmt.first()
+            completed_appointment = stmt.first()
         except Exception as e:
             print(e)
             # raise utils.DatabaseCommitError(e)
         finally:
-            return confirmed_appointment
+            return completed_appointment
 
     def cancel_appointment_by_uuid(
         self,

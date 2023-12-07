@@ -199,17 +199,17 @@ def update_appointment_by_uuid(
 
 
 @app.post(
-    "/appointment/confirmAppointmentByUUID/", response_model=ReturnAppointmentSchemas
+    "/appointment/completeAppointmentByUUID/", response_model=ReturnAppointmentSchemas
 )
-def confirm_appointment_by_uuid(
+def complete_appointment_by_uuid(
         token: str,
         appointment_uuid: UUID,
         db: Session = Depends(get_db),
 ):
-    confirmed_appointment = fastapi_appointment_crud.confirm_appointment_by_uuid(
+    complete_appointment = fastapi_appointment_crud.complete_appointment_by_uuid(
         db=db, token=token, appointment_uuid=appointment_uuid
     )
-    return parse_apointment(db, confirmed_appointment)
+    return parse_apointment(db, complete_appointment)
 
 
 @app.post(
