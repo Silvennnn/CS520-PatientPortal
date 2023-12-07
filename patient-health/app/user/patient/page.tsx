@@ -15,6 +15,8 @@ import {
     getAppointmentByToken,
     updateAppointmentByUUID
 } from "@/api/appointment";
+import {parse_time} from "@/app/tools";
+import {createMedicalRecord} from "@/api/record";
 
 export default function PatientHome() {
     const [userProfile, setUserProfile] = useState({
@@ -30,6 +32,7 @@ export default function PatientHome() {
         "address": []
     })
     const [userAppointmentList, setUserAppointmentList] = useState([])
+    const [userRecordList, setUserRecordList] = useState([])
     const [accessToken, setAccessToken] = useState('')
     const [userProfileAddress, setProfileAddress] = useState('')
     const [userContact, setUserContact] = useState('')
@@ -128,6 +131,7 @@ export default function PatientHome() {
         }
     }
 
+    // ************************************** Appointment Section *************************************************************
     // Schedule Appointment
     const [newAppLocation, setNewAppLocation] = useState(location_options[0].value)
     const [newAppDoctor, setNewAppDoctor] = useState(doctor_options[0].value)
@@ -221,6 +225,37 @@ export default function PatientHome() {
             console.error('Error during appointment cancellation:', error);
         }
     }
+
+    // ************************************** Record Section *************************************************************
+    const [newRecordDate, setNewRecordDate] = useState('')
+    const [newRecordDoctor, setNewRecordDoctor] =useState(doctor_options[0].value)
+    const [newRecordSymptom, setNewRecordSymptom] = useState("")
+    const [newRecordDiag, setNewRecordDiag] = useState("")
+    const [newRecordMed, setNewRecordMed] = useState("")
+
+    const recordCreate = async () => {
+        const data = {
+            "symptom": newRecordSymptom,
+            "diagnosis": newRecordDiag,
+            "Medication": newRecordMed,
+            "date_of_visit": newRecordDate,
+            "doctor_account_name": newRecordDoctor,
+            "patient_account_name": userProfile.account_name
+        }
+        try {
+            let response = await createMedicalRecord(accessToken, data).then(
+                e => {
+                    setWindowOpen(false)
+                    window.location.reload()
+                }
+            )
+        } catch (error) {
+            console.error('Error during record create:', error);
+        }
+    }
+
+
+
 
     return (
         <>
@@ -362,25 +397,34 @@ export default function PatientHome() {
                                                                 <div className={"flex flex-row gap-x-3 items-center w-full"}>
                                                                     <label htmlFor="new_record_datetime" className="text-sm font-medium  text-gray-900 w-[60px] text-start">Date of Visit</label>
                                                                     <input type="datetime-local" id="new_record_datetime"
+                                                                           value={newRecordDate}
+                                                                           onChange={e => {
+                                                                            setNewRecordDate(e.target.value)
+                                                                            }
+                                                                           }
                                                                            name="new_record_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
                                                                 </div>
                                                             </div>
 
-                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
-                                                                <label htmlFor="new_record_location" className="text-sm font-medium  text-gray-900 w-[60px] text-start">
-                                                                    Location
-                                                                </label>
-                                                                <select
-                                                                    id="new_record_location"
-                                                                    name="new_record_location"
-                                                                    className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={location_options[0]["label"]}
-                                                                >
-                                                                    {
-                                                                        location_options.map(e => (<option key={e.value}>{e["label"]}</option>))
-                                                                    }
-                                                                </select>
-                                                            </div>
+                                                            {/*<div className={"flex flex-row gap-x-3 items-center w-full"}>*/}
+                                                            {/*    <label htmlFor="new_record_location" className="text-sm font-medium  text-gray-900 w-[60px] text-start">*/}
+                                                            {/*        Location*/}
+                                                            {/*    </label>*/}
+                                                            {/*    <select*/}
+                                                            {/*        id="new_record_location"*/}
+                                                            {/*        name="new_record_location"*/}
+                                                            {/*        className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"*/}
+                                                            {/*        value={newRecordLocation}*/}
+                                                            {/*        onChange={e => {*/}
+                                                            {/*            setNewRecordLocation(e.target.value.toString())*/}
+                                                            {/*            }*/}
+                                                            {/*        }*/}
+                                                            {/*    >*/}
+                                                            {/*        {*/}
+                                                            {/*            location_options.map(e => (<option key={e.value}>{e["label"]}</option>))*/}
+                                                            {/*        }*/}
+                                                            {/*    </select>*/}
+                                                            {/*</div>*/}
 
                                                             <div className={"flex flex-row gap-x-3 items-center w-full"}>
                                                                 <label htmlFor="new_record_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>
@@ -388,7 +432,11 @@ export default function PatientHome() {
                                                                     id="new_record_doctor"
                                                                     name="new_record_doctor"
                                                                     className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={doctor_options[0]["label"]}
+                                                                    value={newRecordDoctor}
+                                                                    onChange={e => {
+                                                                        setNewRecordDoctor(e.target.value)
+                                                                    }
+                                                                    }
                                                                 >
                                                                     {
                                                                         doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
@@ -404,7 +452,10 @@ export default function PatientHome() {
                                                                     name="new_record_symptom"
                                                                     rows={3}
                                                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={''}
+                                                                    value={newRecordSymptom}
+                                                                    onChange={e => {
+                                                                        setNewRecordSymptom(e.target.value)
+                                                                    }}
                                                                     placeholder={"Describe symptom here ..."}
                                                                 />
                                                             </div>
@@ -416,7 +467,10 @@ export default function PatientHome() {
                                                                     name="new_record_diagnosis"
                                                                     rows={3}
                                                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={''}
+                                                                    value={newRecordDiag}
+                                                                    onChange={e => {
+                                                                        setNewRecordDiag(e.target.value)
+                                                                    }}
                                                                     placeholder={"Enter diagnosis here ..."}
                                                                 />
                                                             </div>
@@ -428,7 +482,10 @@ export default function PatientHome() {
                                                                     name="new_record_medication"
                                                                     rows={3}
                                                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    defaultValue={''}
+                                                                    value={newRecordMed}
+                                                                    onChange={e => {
+                                                                        setNewRecordMed(e.target.value)
+                                                                    }}
                                                                     placeholder={"Enter medication here ..."}
                                                                 />
                                                             </div>
@@ -439,9 +496,9 @@ export default function PatientHome() {
                                                     <button
                                                         type="button"
                                                         className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
-                                                        onClick={() => setWindowOpen(false)}
+                                                        onClick={() => recordCreate()}
                                                     >
-                                                        Schedule
+                                                        Create
                                                     </button>
                                                     <button
                                                         type="button"
@@ -829,7 +886,7 @@ export default function PatientHome() {
                                                 <div className={"flex flex-col w-full pt-5"}>
                                                     <div className={"flex flex-row gap-x-3"}>
                                                         <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Time: </div>
-                                                        <div className={"text-black text-[18px] font-sans"}>{ele.datetime}</div>
+                                                        <div className={"text-black text-[18px] font-sans"}>{parse_time(ele.datetime)}</div>
                                                     </div>
                                                     <div className={"flex flex-row gap-x-3"}>
                                                         <div className={"font-bold text-teal-700 text-[18px] font-sans w-[80px]"}>Doctor: </div>
