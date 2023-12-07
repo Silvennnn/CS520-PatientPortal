@@ -102,16 +102,18 @@ class AppointmentCRUD:
             )
         elif current_user.account_type == 1:
             target_user = get_by_account_name(db=db, account_name=account_name)
-            if target_user.user_uuid == current_user.user_uuid: # doctor looking for him/herself
+            if (
+                target_user.user_uuid == current_user.user_uuid
+            ):  # doctor looking for him/herself
                 return db.query(Appointment).filter(
                     Appointment.doctor_uuid == current_uuid
                 )
             else:
-                if target_user.account_type == 1: # doctor is looking for other doctor
+                if target_user.account_type == 1:  # doctor is looking for other doctor
                     raise HTTPException(
                         status_code=401, detail="you cannot look for other doctors"
                     )
-                else: # doctor is looking for patient
+                else:  # doctor is looking for patient
                     target_user_uuid = target_user.user_uuid
                     if is_doctor_associated_with_patient(
                         db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid

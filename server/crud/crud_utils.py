@@ -42,7 +42,7 @@ def get_account_name_by_uuid(db: Session, user_uuid: UUID) -> str:
 
 
 def parse_list_of_appointment(
-        db: Session, appointments: List[Appointment]
+    db: Session, appointments: List[Appointment]
 ) -> List[ReturnAppointmentSchemas]:
     result = []
     for appointment in appointments:
@@ -51,7 +51,7 @@ def parse_list_of_appointment(
 
 
 def passe_list_of_medical_records(
-        db: Session, medical_records: List[MedicalRecord]
+    db: Session, medical_records: List[MedicalRecord]
 ) -> List[ReturnMedicalRecordSchemas]:
     result = []
     for medical_record in medical_records:
@@ -71,7 +71,7 @@ def parse_apointment(db: Session, appointment: Appointment) -> ReturnAppointment
 
 
 def parse_medical_record(
-        db: Session, medical_record: MedicalRecord
+    db: Session, medical_record: MedicalRecord
 ) -> ReturnAppointmentSchemas:
     patient_uuid = medical_record.patient_uuid
     doctor_uuid = medical_record.doctor_uuid
@@ -84,28 +84,28 @@ def parse_medical_record(
 
 
 def is_doctor_associated_with_patient(
-        db: Session, doctor_uuid: UUID, patient_uuid: UUID
+    db: Session, doctor_uuid: UUID, patient_uuid: UUID
 ) -> bool:
     associated_appointments = (
-            db.query(Appointment)
-            .filter(
-                and_(
-                    Appointment.doctor_uuid == doctor_uuid,
-                    Appointment.patient_uuid == patient_uuid,
-                )
+        db.query(Appointment)
+        .filter(
+            and_(
+                Appointment.doctor_uuid == doctor_uuid,
+                Appointment.patient_uuid == patient_uuid,
             )
-            .count()
-            > 0
+        )
+        .count()
+        > 0
     )
     associated_medical_record = (
-            db.query(MedicalRecord)
-            .filter(
-                and_(
-                    MedicalRecord.doctor_uuid == doctor_uuid,
-                    MedicalRecord.patient_uuid == patient_uuid,
-                )
+        db.query(MedicalRecord)
+        .filter(
+            and_(
+                MedicalRecord.doctor_uuid == doctor_uuid,
+                MedicalRecord.patient_uuid == patient_uuid,
             )
-            .count()
-            > 0
+        )
+        .count()
+        > 0
     )
     return associated_appointments or associated_medical_record

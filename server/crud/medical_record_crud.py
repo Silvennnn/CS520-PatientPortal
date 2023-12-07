@@ -18,6 +18,7 @@ from uuid import UUID
 class MedicalRecordCRUD:
     def __int__(self):
         pass
+
     def create_medical_record(
         self,
         db: Session,
@@ -30,7 +31,10 @@ class MedicalRecordCRUD:
                 status_code=401,
                 detail="Only doctor can create medical record",
             )
-        if submit_user.account_name != create_medical_record_schemas.doctor_account_name:
+        if (
+            submit_user.account_name
+            != create_medical_record_schemas.doctor_account_name
+        ):
             raise HTTPException(
                 status_code=401,
                 detail="You can create medical record for your own",
@@ -61,7 +65,6 @@ class MedicalRecordCRUD:
             return None
         return create_record
 
-
     def get_medical_records_by_account_name(
         self,
         db: Session,
@@ -82,7 +85,9 @@ class MedicalRecordCRUD:
             )
         elif current_user.account_type == 1:
             target_user = get_by_account_name(db=db, account_name=account_name)
-            if target_user.user_uuid == current_user.user_uuid:  # doctor looking for him/herself
+            if (
+                target_user.user_uuid == current_user.user_uuid
+            ):  # doctor looking for him/herself
                 return db.query(MedicalRecord).filter(
                     MedicalRecord.doctor_uuid == current_uuid
                 )
@@ -94,7 +99,7 @@ class MedicalRecordCRUD:
                 else:  # doctor is looking for patient
                     target_user_uuid = target_user.user_uuid
                     if is_doctor_associated_with_patient(
-                            db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid
+                        db=db, doctor_uuid=current_uuid, patient_uuid=target_user_uuid
                     ):
                         return db.query(MedicalRecord).filter(
                             MedicalRecord.patient_uuid == target_user_uuid
@@ -105,8 +110,10 @@ class MedicalRecordCRUD:
                         )
         else:
             raise HTTPException(status_code=401, detail="unexpected user account type")
-        
-    def get_medical_records_by_token(self, db: Session, token: str) -> List[MedicalRecord]:
+
+    def get_medical_records_by_token(
+        self, db: Session, token: str
+    ) -> List[MedicalRecord]:
         current_user = get_user_by_token(db=db, token=token)
         current_uuid = current_user.user_uuid
         if current_user.account_type == 0:
@@ -114,10 +121,11 @@ class MedicalRecordCRUD:
                 MedicalRecord.patient_uuid == current_uuid
             )
         elif current_user.account_type == 1:
-            return db.query(MedicalRecord).filter(MedicalRecord.doctor_uuid == current_uuid)
+            return db.query(MedicalRecord).filter(
+                MedicalRecord.doctor_uuid == current_uuid
+            )
         else:
             raise HTTPException(status_code=401, detail="unexpected user account type")
-
 
     def get_medical_record_by_uuid(
         self, db: Session, medical_record_uuid: UUID
@@ -132,7 +140,6 @@ class MedicalRecordCRUD:
                 status_code=401, detail="The medical record uuid you provide is invalid"
             )
         return medical_record
-
 
     def update_medical_record_By_UUID(
         self,
@@ -182,8 +189,9 @@ class MedicalRecordCRUD:
         finally:
             return updated_record
 
-
-    def delete_medical_record_by_uuid(self, db: Session, token: str, medical_record_uuid: UUID):
+    def delete_medical_record_by_uuid(
+        self, db: Session, token: str, medical_record_uuid: UUID
+    ):
         current_user = get_user_by_token(db=db, token=token)
         if current_user.account_type == 0:
             raise HTTPException(

@@ -6,7 +6,11 @@ from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from server.crud.crud_utils import get_user_by_token, is_doctor_associated_with_patient, get_by_account_name
+from server.crud.crud_utils import (
+    get_user_by_token,
+    is_doctor_associated_with_patient,
+    get_by_account_name,
+)
 from server.database.models import User, Appointment, MedicalRecord
 from server.schemas.user_schemas import CreateUserSchemas, UpdateUserSchemas
 from server.utils.security import get_password_hash
@@ -68,7 +72,9 @@ class UserCRUD:
                 detail="patient user could not get user info other than him/herself",
             )
         if current_user.account_type == 1 and current_user.user_uuid != uuid:
-            if not is_doctor_associated_with_patient(db=db, doctor_uuid=current_uuid, patient_uuid=uuid):
+            if not is_doctor_associated_with_patient(
+                db=db, doctor_uuid=current_uuid, patient_uuid=uuid
+            ):
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
@@ -91,11 +97,13 @@ class UserCRUD:
             )
         if current_user.account_type == 1 and current_account_name != account_name:
             query_user = get_by_account_name(db, account_name)
-            if not is_doctor_associated_with_patient(db=db, doctor_uuid=current_uuid, patient_uuid=query_user.user_uuid):
+            if not is_doctor_associated_with_patient(
+                db=db, doctor_uuid=current_uuid, patient_uuid=query_user.user_uuid
+            ):
                 raise HTTPException(
                     status_code=401,
                     detail="doctor user could not get user info other than patient "
-                           "that he/her associated with",
+                    "that he/her associated with",
                 )
             return query_user
         return current_user
