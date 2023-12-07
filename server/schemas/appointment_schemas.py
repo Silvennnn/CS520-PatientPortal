@@ -6,7 +6,7 @@ from datetime import datetime
 
 class CreateAppointmentSchemas(BaseConfig):
     datetime: datetime
-    location: Optional[List[str]] = []
+    location: Optional[str] = None
     doctor_account_name: str
     patient_account_name: str
     message: Optional[str]
@@ -20,9 +20,9 @@ class ReturnAppointmentSchemas(CreateAppointmentSchemas):
 
 
 class UpdateAppointmentSchemas(BaseConfig):
-    datetime: Optional[datetime]
-    location: Optional[List[str]] = []
-    message: Optional[str]
+    datetime: Optional[datetime] = None
+    location: Optional[str] = None
+    message: Optional[str] = None
 
 
 class UpdateAppointmentStatusSchames(BaseConfig):

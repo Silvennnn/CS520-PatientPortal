@@ -74,7 +74,7 @@ class UserCRUD:
                     detail="doctor user could not get user info other than patient "
                     "that he/her associated with",
                 )
-            query_user = self.get_user_by_uuid(db, current_uuid)
+            query_user = self.get_user_by_uuid(db, uuid)
             return query_user
         return current_user
 

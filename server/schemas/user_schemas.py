@@ -14,11 +14,11 @@ class CreateUserSchemas(BaseConfig):
     phone_number: Optional[str] = None
     date_of_birth: date
     gender: str
-    address: Optional[List[str]] = []
+    address: Optional[str] = None
 
 
 class UpdateUserSchemas(BaseConfig):
-    address: Optional[List[str]] = []
+    address: Optional[str] = None
     phone_number: Optional[str] = None
 
 
@@ -32,7 +32,7 @@ class UserProfileSchemas(BaseConfig):
     phone_number: str
     date_of_birth: date
     gender: str
-    address: Optional[List[str]] = []
+    address: Optional[str] = None
 
 
 class LoggedInUser(UserProfileSchemas):

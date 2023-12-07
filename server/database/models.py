@@ -39,7 +39,7 @@ class User(Base):
     phone_number = Column(VARCHAR(16))
     date_of_birth = Column(Date, nullable=False)
     gender = Column(VARCHAR(16), nullable=False)
-    address = Column(ARRAY(VARCHAR(32)))
+    address = Column(VARCHAR(32))
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -51,7 +51,7 @@ class Appointment(Base):
         UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid.uuid4
     )
     datetime = Column(DateTime, nullable=False)
-    location = Column(ARRAY(VARCHAR(32)))
+    location = Column(VARCHAR(32))
     doctor_uuid = Column(
         UUID(as_uuid=True), ForeignKey("user.user_uuid"), nullable=False
     )
