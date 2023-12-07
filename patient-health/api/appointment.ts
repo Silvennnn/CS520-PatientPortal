@@ -101,9 +101,9 @@ export async function updateAppointmentByUUID(token, appointment_uuid, date, loc
     }
 }
 
-const app_uuid = "50746a16-e02a-4f28-b33b-e5b45eba392e"
+const app_uuid = "b97c572c-e86d-4a50-a205-bf36178d9f1b"
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MzIwMzJhOS0yZDIyLTQwZWMtYjQ5NC0zM2ZiZWI2Y2RkZTQiLCJleHAiOjE3MDQ1MDIzNDZ9.rcQkvcaw65u_l9J2IngG_a6Awtc9tutEBYYUY_t3gMg"
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
 
 
 export async function confirmAppointmentByUUID(token, appointment_uuid){
@@ -140,4 +140,18 @@ export async function cancelAppointmentByUUID(token, appointment_uuid){
     }
 }
 
-cancelAppointmentByUUID(token, app_uuid)
+export async function deleteAppointmentByUUID(token, appointment_uuid){
+        const response = await fetch(baseURL + `/appointment/deleteAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+            method: "DELETE",
+            headers: {
+            "Content-Type": "application/json",
+            },
+        }
+    );
+        if(response.status != 200){
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+}
+
+deleteAppointmentByUUID(token, app_uuid);
