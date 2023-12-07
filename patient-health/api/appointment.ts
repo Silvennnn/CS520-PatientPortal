@@ -37,7 +37,7 @@ const appoint: Appointment = {
       "status": 0
 }
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRjLTRkZDQtODA2Zi1iMTJkZDM4Y2FkMTUiLCJleHAiOjE3MDQ0ODk2MTB9.twoGwsKhlTMisHWDR1zjOr8hCsOuraLjUexAm6n_168"
+
 const acc_name = "doctor_1"
 
 
@@ -96,11 +96,62 @@ export async function updateAppointmentByUUID(token, appointment_uuid, date, loc
         console.log("success");
         return response.json();
     }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 }
 
-const app_uuid = "85673879-881d-421d-a895-580c7266fe0f"
-const date = "2023-12-09T00:30:52.408Z"
-const loc = []
-const msg = "reschedule"
+const app_uuid = "b97c572c-e86d-4a50-a205-bf36178d9f1b"
 
-updateAppointmentByUUID(token, app_uuid, date, loc, msg)
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
+
+
+export async function confirmAppointmentByUUID(token, appointment_uuid){
+    const response = await fetch(baseURL + `/appointment/confirmAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }
+    );
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+}
+
+export async function cancelAppointmentByUUID(token, appointment_uuid){
+    const response = await fetch(baseURL + `/appointment/cancelAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        },
+        }
+    );
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+}
+
+export async function deleteAppointmentByUUID(token, appointment_uuid){
+        const response = await fetch(baseURL + `/appointment/deleteAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+            method: "DELETE",
+            headers: {
+            "Content-Type": "application/json",
+            },
+        }
+    );
+        if(response.status != 200){
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+}
+
+deleteAppointmentByUUID(token, app_uuid);
