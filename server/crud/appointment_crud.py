@@ -158,7 +158,7 @@ class AppointmentCRUD:
             and len(update_info_dict["datetime"]) > 0
         ):
             update_info_dict["datetime"] = datetime.strptime(
-                update_info_dict["datetime"], "%Y-%m-%dT%H:%M:%S"
+                update_info_dict["datetime"], "%Y-%m-%dT%H:%M"
             )
         else:
             update_info_dict.pop("datetime")

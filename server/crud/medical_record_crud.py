@@ -7,6 +7,7 @@ from server.crud.crud_utils import (
     get_user_by_token,
     is_doctor_associated_with_patient,
     get_by_account_name,
+    get_account_name_by_uuid,
 )
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -26,33 +27,47 @@ class MedicalRecordCRUD:
         create_medical_record_schemas: CreateMedicalRecordSchemas,
     ):
         submit_user = get_user_by_token(db=db, token=token)
-        if submit_user.account_type == 0:
-            raise HTTPException(
-                status_code=401,
-                detail="Only doctor can create medical record",
-            )
-        if (
-            submit_user.account_name
-            != create_medical_record_schemas.doctor_account_name
-        ):
-            raise HTTPException(
-                status_code=401,
-                detail="You can create medical record for your own",
-            )
+        # if submit_user.account_type == 0:
+        #     raise HTTPException(
+        #         status_code=401,
+        #         detail="Only doctor can create medical record",
+        #     )
+        # if (
+        #     submit_user.account_name
+        #     != create_medical_record_schemas.doctor_account_name
+        # ):
+        #     raise HTTPException(
+        #         status_code=401,
+        #         detail="You can create medical record for your own",
+        #     )
         patient = get_by_account_name(
             db=db, account_name=create_medical_record_schemas.patient_account_name
         )
-        if not is_doctor_associated_with_patient(
-            db=db, doctor_uuid=submit_user.user_uuid, patient_uuid=patient.user_uuid
+        doctor = get_by_account_name(
+            db=db, account_name=create_medical_record_schemas.doctor_account_name
+        )
+        # if not is_doctor_associated_with_patient(
+        #     db=db, doctor_uuid=submit_user.user_uuid, patient_uuid=patient.user_uuid
+        # ):
+        #     raise HTTPException(
+        #         status_code=401,
+        #         detail="The Patient is not associated with you",
+        #     )
+        if (
+            submit_user.account_name
+            != create_medical_record_schemas.doctor_account_name
+            and submit_user.account_name
+            != create_medical_record_schemas.patient_account_name
         ):
             raise HTTPException(
                 status_code=401,
-                detail="The Patient is not associated with you",
+                detail="You can create your own medical record",
             )
+
         create_record = copy(create_medical_record_schemas.__dict__)
         create_record.pop("patient_account_name")
         create_record.pop("doctor_account_name")
-        create_record["doctor_uuid"] = submit_user.user_uuid
+        create_record["doctor_uuid"] = doctor.user_uuid
         create_record["patient_uuid"] = patient.user_uuid
         create_record = MedicalRecord(**create_record)
         db.add(create_record)
@@ -152,23 +167,42 @@ class MedicalRecordCRUD:
         allowed_field = update_info_dict.keys()
         update_field = {}
         current_user = get_user_by_token(db=db, token=token)
-        if current_user.account_type == 0:
-            raise HTTPException(
-                status_code=401,
-                detail="patient does not allow to update medical record",
-            )
+        # if current_user.account_type == 0:
+        #     raise HTTPException(
+        #         status_code=401,
+        #         detail="patient does not allow to update medical record",
+        #     )
         stmt = db.query(MedicalRecord).filter(
             MedicalRecord.medical_record_uuid == medical_record_uuid
         )
         current_medical_record = stmt.first()
-        if current_user.account_type == 1:
-            if current_medical_record.doctor_uuid != current_user.user_uuid:
-                raise HTTPException(
-                    status_code=401,
-                    detail="the medical record uuid you provide is not belongs to you",
-                )
-        else:
-            raise HTTPException(status_code=401, detail="unexpected user account type")
+        if current_medical_record == None:
+            raise HTTPException(
+                status_code=401,
+                detail="the medical record you provide is invalid",
+            )
+        patient_account_name = get_account_name_by_uuid(
+            db=db, user_uuid=current_medical_record.patient_uuid
+        )
+        doctor_account_name = get_account_name_by_uuid(
+            db=db, user_uuid=current_medical_record.doctor_uuid
+        )
+        if (
+            current_user.account_name != patient_account_name
+            and current_user.account_name != doctor_account_name
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="You can only update ur own medical record",
+            )
+        # if current_user.account_type == 1:
+        #     if current_medical_record.doctor_uuid != current_user.user_uuid:
+        #         raise HTTPException(
+        #             status_code=401,
+        #             detail="the medical record uuid you provide is not belongs to you",
+        #         )
+        # else:
+        #     raise HTTPException(status_code=401, detail="unexpected user account type")
 
         current_medical_record = current_medical_record.__dict__
         for record_filed in current_medical_record:
