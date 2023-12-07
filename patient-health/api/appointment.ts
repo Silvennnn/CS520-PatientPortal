@@ -153,5 +153,3 @@ export async function deleteAppointmentByUUID(token, appointment_uuid){
         }
 
 }
-
-deleteAppointmentByUUID(token, app_uuid);

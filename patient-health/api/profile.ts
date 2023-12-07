@@ -2,6 +2,38 @@ import * as repl from "repl";
 
 export const baseURL = 'http://127.0.0.1:8000';
 
+
+export interface User {
+  "account_name": string,
+  "password": string,
+  "account_type": number,
+  "first_name": string,
+  "last_name": string,
+  "middle_name": string,
+  "phone_number": string,
+  "date_of_birth": string,
+  "gender": string,
+  "address": string[],
+}
+
+export async function registerUser(user: User){
+    const response = await fetch(baseURL + "/user/createUser/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(user)
+        });
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    } else {
+        console.error("error");
+    }
+}
+
+
+
 export async function getUserProfileByToken(token: string){
     const response = await fetch(baseURL + `/user/getMe?token=${token}`,{
         method: "GET",
