@@ -5,7 +5,7 @@ export const baseURL = 'http://127.0.0.1:8000';
 
 export interface Appointment {
       "datetime": string,
-      "location": string[],
+      "location": string,
       "doctor_account_name": string,
       "patient_account_name": string,
       "message": string,
@@ -30,7 +30,7 @@ export async function createAppointment(token, appointment){
 
 const appoint: Appointment = {
     "datetime": "2023-12-06T22:50:01.665Z",
-      "location": [],
+      "location": '',
       "doctor_account_name": "doctor_1",
       "patient_account_name": "patient_1",
       "message": "string",
@@ -106,8 +106,8 @@ const app_uuid = "b97c572c-e86d-4a50-a205-bf36178d9f1b"
 const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
 
 
-export async function confirmAppointmentByUUID(token, appointment_uuid){
-    const response = await fetch(baseURL + `/appointment/confirmAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+export async function completeAppointmentByUUID(token, appointment_uuid){
+    const response = await fetch(baseURL + `/appointment/completeAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
         method: "POST",
         headers: {
             "Content-Type": "application/json",

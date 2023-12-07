@@ -13,7 +13,7 @@ export interface User {
   "phone_number": string,
   "date_of_birth": string,
   "gender": string,
-  "address": string[],
+  "address": string,
 }
 
 export async function registerUser(user: User){

@@ -68,4 +68,23 @@ const form: Update_form = {
       "Medication": "zasd"
 }
 
-updateMedicalRecordByUUID(token, rec_uuid, form)
+export async function getMedicalByAccountName(token, account_name){
+     const response = await fetch(baseURL + `/medicalRecord/getMedicalRecordByAccountName/?token=${token}&account_name=${account_name}`,{
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+     if(!response.ok){
+         throw new Error(`HTTP error! Status: ${response.status}`);
+     }
+    else{
+        const data = await response.json();
+        return data;
+     }
+
+}
+
+const token_pat = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
+const acc_name = "patient_1"
+
