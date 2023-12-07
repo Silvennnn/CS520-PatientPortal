@@ -77,3 +77,30 @@ export async function getAppointmentByToken(token){
 }
 
 
+export async function updateAppointmentByUUID(token, appointment_uuid, date, loc, msg){
+    const response = await fetch(baseURL + `/appointment/updateAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body:  JSON.stringify(
+            {
+                    "datetime" : date,
+                    "location": loc,
+                    "message": msg,
+            }
+        )
+    }
+    );
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    }
+}
+
+const app_uuid = "85673879-881d-421d-a895-580c7266fe0f"
+const date = "2023-12-09T00:30:52.408Z"
+const loc = []
+const msg = "reschedule"
+
+updateAppointmentByUUID(token, app_uuid, date, loc, msg)
