@@ -38,8 +38,6 @@ const appoint: Appointment = {
 }
 
 
-const acc_name = "doctor_1"
-
 
 export async function getAppointmentByAccountName(account_name, token){
      const response = await fetch(baseURL + `/appointment/getAppointmentByAccountName/?token=${token}&account_name=${account_name}`,{
@@ -100,10 +98,6 @@ export async function updateAppointmentByUUID(token, appointment_uuid, date, loc
         throw new Error(`HTTP error! Status: ${response.status}`);
     }
 }
-
-const app_uuid = "b97c572c-e86d-4a50-a205-bf36178d9f1b"
-
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
 
 
 export async function completeAppointmentByUUID(token, appointment_uuid){
