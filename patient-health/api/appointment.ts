@@ -37,7 +37,7 @@ const appoint: Appointment = {
       "status": 0
 }
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRjLTRkZDQtODA2Zi1iMTJkZDM4Y2FkMTUiLCJleHAiOjE3MDQ0ODk2MTB9.twoGwsKhlTMisHWDR1zjOr8hCsOuraLjUexAm6n_168"
+
 const acc_name = "doctor_1"
 
 
@@ -96,11 +96,31 @@ export async function updateAppointmentByUUID(token, appointment_uuid, date, loc
         console.log("success");
         return response.json();
     }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 }
 
-const app_uuid = "85673879-881d-421d-a895-580c7266fe0f"
-const date = "2023-12-09T00:30:52.408Z"
-const loc = []
-const msg = "reschedule"
+const app_uuid = "50746a16-e02a-4f28-b33b-e5b45eba392e"
 
-updateAppointmentByUUID(token, app_uuid, date, loc, msg)
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MzIwMzJhOS0yZDIyLTQwZWMtYjQ5NC0zM2ZiZWI2Y2RkZTQiLCJleHAiOjE3MDQ1MDIzNDZ9.rcQkvcaw65u_l9J2IngG_a6Awtc9tutEBYYUY_t3gMg"
+
+
+export async function confirmAppointmentByUUID(token, appointment_uuid){
+    const response = await fetch(baseURL + `/appointment/confirmAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }
+    );
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+}
+
+confirmAppointmentByUUID(token, app_uuid)
