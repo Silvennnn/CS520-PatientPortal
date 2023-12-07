@@ -41,11 +41,13 @@ export async function getUserProfileByToken(token: string){
             "Content-Type": "application/json"
         },
     })
-    return response
+    const json_response = await response.json()
+    return json_response
 }
 
-export async function updateUserProfile(token: string, address: string[], phoneNumber: string){
-    const response = await fetch(baseURL + `/user/updateUserProfile?token=${token}`,{
+export async function updateUserProfile(token: string, address: string, phoneNumber: string){
+    console.log("1111")
+    const response = await fetch(baseURL + `/user/updateUserProfile/?token=${token}`,{
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -59,8 +61,9 @@ export async function updateUserProfile(token: string, address: string[], phoneN
     }
     );
     if(response.ok){
-        console.log("success");
         return response.json();
+    } else{
+        console.log("User Profile Update Error!")
     }
 }
 
@@ -71,14 +74,10 @@ export async function getUserByAccountName(account_name, token){
             "Content-Type": "application/json",
         },
     });
-     if(!response.ok){
-         throw new Error(`HTTP error! Status: ${response.status}`);
+     if(response.ok){
+         const data = await response.json();
+         return data;
      }
-    else{
-        const data = await response.json();
-        return data;
-     }
-
 }
 
 export async function getUserByUUID(id, token){
