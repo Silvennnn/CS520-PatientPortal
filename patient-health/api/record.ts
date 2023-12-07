@@ -86,5 +86,23 @@ export async function getMedicalByAccountName(token, account_name){
 }
 
 const token_pat = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyNDdkYTQ1ZS1jMjk2LTQ3NGItYjY2ZC1hNzI1NTZlMGNiMmEiLCJleHAiOjE3MDQ1MDIyOTR9.8SzP1oPbceS-FX_OxgNXRHwlY_nF0CNGxJi0imApeCI"
-const acc_name = "patient_1"
 
+
+export async function getMedicalByToken(token){
+     const response = await fetch(baseURL + `/medicalRecord/getMedicalRecordByToken/?token=${token}`,{
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+     if(!response.ok){
+         throw new Error(`HTTP error! Status: ${response.status}`);
+     }
+    else{
+        const data = await response.json();
+        return data;
+     }
+
+}
+
+getMedicalByToken(token_pat)
