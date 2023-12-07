@@ -20,7 +20,7 @@ class ReturnAppointmentSchemas(CreateAppointmentSchemas):
 
 
 class UpdateAppointmentSchemas(BaseConfig):
-    datetime: Optional[datetime] = None
+    datetime: Optional[str] = None
     location: Optional[str] = None
     message: Optional[str] = None
 

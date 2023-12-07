@@ -12,7 +12,8 @@ from server.schemas.appointment_schemas import (
     UpdateAppointmentSchemas,
 )
 from uuid import UUID
-from sqlalchemy import and_
+import logging
+from datetime import datetime
 
 
 class AppointmentCRUD:
@@ -149,7 +150,18 @@ class AppointmentCRUD:
         appointment_uuid: UUID,
         update_appointment_schemas: UpdateAppointmentSchemas,
     ) -> Appointment:
+        logging.info(update_appointment_schemas)
         update_info_dict = update_appointment_schemas.__dict__
+        if (
+            "datetime" in update_info_dict
+            and update_info_dict["datetime"] is not None
+            and len(update_info_dict["datetime"]) > 0
+        ):
+            update_info_dict["datetime"] = datetime.strptime(
+                update_info_dict["datetime"], "%Y-%m-%dT%H:%M:%S"
+            )
+        else:
+            update_info_dict.pop("datetime")
         allowed_field = update_info_dict.keys()
         update_field = {}
         current_user = get_user_by_token(db=db, token=token)
