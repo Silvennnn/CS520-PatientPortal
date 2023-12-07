@@ -60,7 +60,6 @@ export async function updateMedicalRecordByUUID(token, record_uuid, update_form)
     }
 }
 
-const rec_uuid = "8fb61056-9528-40ee-945e-22290184c842"
 
 const form: Update_form = {
       "symptom": "xasdas",
@@ -105,4 +104,18 @@ export async function getMedicalByToken(token){
 
 }
 
-getMedicalByToken(token_pat)
+export async function deleteMedicalRecordByUUID(token, record_uuid){
+        const response = await fetch(baseURL + `/medicalRecord/deleteMedicalRecordByUUID/?token=${token}&medical_record_uuid=${record_uuid}`,{
+            method: "DELETE",
+            headers: {
+            "Content-Type": "application/json",
+            },
+        }
+    );
+        if(response.status != 200){
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+}
+
+const rec_uuid = "7d86ffaa-4d9f-4452-9bdb-05293eb1c4c0"
+deleteMedicalRecordByUUID(token, rec_uuid)
