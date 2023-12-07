@@ -123,4 +123,21 @@ export async function confirmAppointmentByUUID(token, appointment_uuid){
     }
 }
 
-confirmAppointmentByUUID(token, app_uuid)
+export async function cancelAppointmentByUUID(token, appointment_uuid){
+    const response = await fetch(baseURL + `/appointment/cancelAppointmentByUUID/?token=${token}&appointment_uuid=${appointment_uuid}`,{
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        },
+        }
+    );
+    if(response.ok){
+        console.log("success");
+        return response.json();
+    }
+    else{
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+}
+
+cancelAppointmentByUUID(token, app_uuid)
