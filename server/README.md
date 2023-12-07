@@ -17,6 +17,13 @@
 
 [API_docs] (http://127.0.0.1:8000/docs)
 
+## Envoriment
+
+Make sure that `.env` file is in the root 
+
+
+
+
 [FastAPI](https://fastapi.tiangolo.com/tutorial/)
 
 [SQLAlchemy orm](https://docs.sqlalchemy.org/en/14/orm/index.html)
