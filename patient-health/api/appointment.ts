@@ -37,6 +37,43 @@ const appoint: Appointment = {
       "status": 0
 }
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRjLTRkZDQtODA2Zi1iMTJkZDM4Y2FkMTUiLCJleHAiOjE3MDQ0MjU3Mzd9.G9IWNPZPdyTU9jCXkpWU2pwVw0wkLLYSQRB_PVbT8ZM"
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzQ4ZTJmOS0wYTRjLTRkZDQtODA2Zi1iMTJkZDM4Y2FkMTUiLCJleHAiOjE3MDQ0ODk2MTB9.twoGwsKhlTMisHWDR1zjOr8hCsOuraLjUexAm6n_168"
+const acc_name = "doctor_1"
 
-createAppointment(token, appoint);
+
+export async function getAppointmentByAccountName(account_name, token){
+     const response = await fetch(baseURL + `/appointment/getAppointmentByAccountName/?token=${token}&account_name=${account_name}`,{
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+     if(!response.ok){
+         throw new Error(`HTTP error! Status: ${response.status}`);
+     }
+    else{
+        const data = await response.json();
+        return data;
+     }
+
+}
+
+export async function getAppointmentByToken(token){
+     const response = await fetch(baseURL + `/appointment/getAppointmentByToken/?token=${token}`,{
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+     if(!response.ok){
+         throw new Error(`HTTP error! Status: ${response.status}`);
+     }
+    else{
+        const data = await response.json();
+        console.log(data);
+        return data;
+     }
+
+}
+
+
