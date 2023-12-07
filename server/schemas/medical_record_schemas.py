@@ -11,12 +11,18 @@ class UpdateMedicalRecordSchemas(BaseConfig):
 
 
 class CreateMedicalRecordSchemas(UpdateMedicalRecordSchemas):
-    date_of_visit: datetime
+    date_of_visit: str
     doctor_account_name: str
     patient_account_name: str
 
 
-class ReturnMedicalRecordSchemas(CreateMedicalRecordSchemas):
+class ReturnMedicalRecordSchemas(BaseConfig):
+    date_of_visit: datetime
+    doctor_account_name: str
+    patient_account_name: str
     medical_record_uuid: UUID
     doctor_uuid: UUID
     patient_uuid: UUID
+    symptom: Optional[str] = None
+    diagnosis: Optional[str] = None
+    Medication: Optional[str] = None

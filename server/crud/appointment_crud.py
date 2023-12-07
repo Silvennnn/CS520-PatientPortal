@@ -58,6 +58,9 @@ class AppointmentCRUD:
             raise HTTPException(status_code=401, detail="No such doctor account name")
         doctor_uuid = doctor.user_uuid
         create_appointment = create_appointment_schemas.__dict__
+        create_appointment["datetime"] = datetime.strptime(
+            create_appointment["datetime"], "%Y-%m-%dT%H:%M"
+        )
         create_appointment.pop("patient_account_name")
         create_appointment.pop("doctor_account_name")
         create_appointment["doctor_uuid"] = doctor_uuid

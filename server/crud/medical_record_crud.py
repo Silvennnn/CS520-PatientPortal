@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from copy import copy
 from typing import List
 from uuid import UUID
+from datetime import datetime
 
 
 class MedicalRecordCRUD:
@@ -65,6 +66,9 @@ class MedicalRecordCRUD:
             )
 
         create_record = copy(create_medical_record_schemas.__dict__)
+        create_record["date_of_visit"] = datetime.strptime(
+            create_record["date_of_visit"], "%Y-%m-%dT%H:%M"
+        )
         create_record.pop("patient_account_name")
         create_record.pop("doctor_account_name")
         create_record["doctor_uuid"] = doctor.user_uuid

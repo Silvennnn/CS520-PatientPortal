@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 class CreateAppointmentSchemas(BaseConfig):
-    datetime: datetime
+    datetime: str
     location: Optional[str] = None
     doctor_account_name: str
     patient_account_name: str
@@ -13,10 +13,16 @@ class CreateAppointmentSchemas(BaseConfig):
     status: int = 0
 
 
-class ReturnAppointmentSchemas(CreateAppointmentSchemas):
+class ReturnAppointmentSchemas(BaseConfig):
+    datetime: datetime
     appointment_uuid: UUID
     doctor_uuid: UUID
     patient_uuid: UUID
+    location: Optional[str] = None
+    doctor_account_name: str
+    patient_account_name: str
+    message: Optional[str]
+    status: int = 0
 
 
 class UpdateAppointmentSchemas(BaseConfig):
