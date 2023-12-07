@@ -79,7 +79,7 @@ class MedicalRecord(Base):
     )
     symptom = Column(TEXT)
     diagnosis = Column(TEXT)
-    Medication = Column(ARRAY(TEXT))
+    Medication = Column(TEXT)
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

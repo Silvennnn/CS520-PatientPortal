@@ -5,9 +5,9 @@ from typing import Optional, List
 
 
 class UpdateMedicalRecordSchemas(BaseConfig):
-    symptom: Optional[str]
-    diagnosis: Optional[str]
-    Medication: Optional[List[str]]
+    symptom: Optional[str] = None
+    diagnosis: Optional[str] = None
+    Medication: Optional[str] = None
 
 
 class CreateMedicalRecordSchemas(UpdateMedicalRecordSchemas):
