@@ -16,7 +16,7 @@ import {
     updateAppointmentByUUID
 } from "@/api/appointment";
 import {parse_time} from "@/app/tools";
-import {createMedicalRecord} from "@/api/record";
+import {createMedicalRecord, deleteMedicalRecordByUUID, getMedicalByToken} from "@/api/record";
 
 export default function PatientHome() {
     const [userProfile, setUserProfile] = useState({
@@ -40,6 +40,9 @@ export default function PatientHome() {
 
     // Initialize
     useEffect(() => {
+        setMode("loading")
+        setWindowOpen(true)
+
         app_init()
         let token = getCookie("access_token")
         setAccessToken(token)
@@ -68,6 +71,18 @@ export default function PatientHome() {
             return json
         }
 
+        // load record
+        const getMedicalByToken = async (token: string) => {
+            const response = await fetch(baseURL + `/medicalRecord/getMedicalRecordByToken/?token=${token}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+            })
+            const json = await response.json()
+            return json
+        }
+
         getUserProfileByToken(token).then(r => {
             console.log("Profile loaded!")
             setUserProfile(r)
@@ -77,8 +92,18 @@ export default function PatientHome() {
 
         getAppointmentByToken(token).then(r => {
             console.log("Appointment loaded!")
+            // console.log(r)
             setUserAppointmentList(r)
         })
+
+
+        getMedicalByToken(token).then(r => {
+            console.log("Record loaded!")
+            // console.log(r)
+            setUserRecordList(r)
+        })
+
+        setWindowOpen(false)
     }, []);
 
 
@@ -108,6 +133,11 @@ export default function PatientHome() {
     const getDoctorNameByValue = (value) => {
         const doctor = doctor_options.find(doctor => doctor.value === value);
         return doctor.label
+    }
+
+    const getDoctorValueByLabel = (label) => {
+        const doctor = doctor_options.find(doctor => doctor.label === label);
+        return doctor.value
     }
 
     // function
@@ -157,11 +187,13 @@ export default function PatientHome() {
             const data:Appointment ={
                 "datetime": newAppTime,
                     "location": newAppLocation,
-                    "doctor_account_name": newAppDoctor,
+                    "doctor_account_name": getDoctorValueByLabel(newAppDoctor),
                     "patient_account_name": userProfile.account_name,
                     "message": newAppMessage,
                     "status": 0
             }
+
+            console.log(data)
 
             let response = await createAppointment(accessToken, data).then(
                 e => {
@@ -201,11 +233,10 @@ export default function PatientHome() {
     const appointmentRescheduleClick = (app_index) => {
         setSelectApp(userAppointmentList[app_index])
         setSelectAppIndex(app_index)
-        setModAppLocation(selectApp.location)
-        setModAppTime(selectApp.datetime)
-        setModAppDoctor(selectApp.doctor_account_name)
-        setModAppMessage(selectApp.message)
-        console.log(selectApp)
+        setModAppLocation(userAppointmentList[app_index].location)
+        setModAppTime(userAppointmentList[app_index].datetime)
+        // setModAppDoctor(userAppointmentList[app_index].doctor_account_name)
+        setModAppMessage(userAppointmentList[app_index].message)
         setMode('reschedule')
         setWindowOpen(true)
     }
@@ -214,6 +245,7 @@ export default function PatientHome() {
         setMode('loading')
         setWindowOpen(true)
         const target_app_uuid = userAppointmentList[selectAppIndex].appointment_uuid
+        // console.log(target_app_uuid)
         try {
             let response = await updateAppointmentByUUID(accessToken, target_app_uuid, modAppTime, modAppLocation, modAppMessage).then(
                 e => {
@@ -232,18 +264,57 @@ export default function PatientHome() {
     const [newRecordSymptom, setNewRecordSymptom] = useState("")
     const [newRecordDiag, setNewRecordDiag] = useState("")
     const [newRecordMed, setNewRecordMed] = useState("")
+    const [modRecordDate, setModRecordDate] = useState('')
+    const [modRecordDoctor, setModRecordDoctor] = useState('')
+    const [modRecordSymptom, setModRecordSymptom] = useState("")
+    const [modRecordDiag, setModRecordDiag] = useState("")
+    const [modRecordMed, setModRecordMed] =useState('')
+    const [selectRecordIndex, setSelectRecordIndex] = useState(-1)
 
     const recordCreate = async () => {
+        // console.log(newRecordDoctor)
         const data = {
             "symptom": newRecordSymptom,
             "diagnosis": newRecordDiag,
             "Medication": newRecordMed,
             "date_of_visit": newRecordDate,
-            "doctor_account_name": newRecordDoctor,
+            "doctor_account_name": getDoctorValueByLabel(newRecordDoctor),
             "patient_account_name": userProfile.account_name
         }
+        // console.log(data)
         try {
             let response = await createMedicalRecord(accessToken, data).then(
+                e => {
+                    setWindowOpen(false)
+                    window.location.reload()
+                }
+            )
+        } catch (error) {
+            console.error('Error during record create:', error);
+        }
+    }
+
+    const recordEditClick = (index) => {
+        setSelectRecordIndex(index)
+        setModRecordDate(userRecordList[index].date_of_visit)
+        setModRecordDiag(userRecordList[index].diagnosis)
+        setModRecordSymptom(userRecordList[index].symptom)
+        setModRecordDoctor(userRecordList[index].doctor_account_name)
+        setModRecordMed(userRecordList[index].Medication)
+        setMode('edit_record')
+        setWindowOpen(true)
+    }
+
+    const recordDeleteClick = (index) => {
+        setSelectRecordIndex(index)
+        setMode("delete_record")
+        setWindowOpen(true)
+    }
+
+    const recordDeleteConfirm = async () => {
+        const record_id = userRecordList[selectRecordIndex].medical_record_uuid
+        try {
+            let response = await deleteMedicalRecordByUUID(accessToken, record_id).then(
                 e => {
                     setWindowOpen(false)
                     window.location.reload()
@@ -383,7 +454,6 @@ export default function PatientHome() {
                                             </div>
                                         )
                                     }
-
                                     {
                                         mode == 'add_record' && (
                                             <div>
@@ -405,26 +475,6 @@ export default function PatientHome() {
                                                                            name="new_record_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
                                                                 </div>
                                                             </div>
-
-                                                            {/*<div className={"flex flex-row gap-x-3 items-center w-full"}>*/}
-                                                            {/*    <label htmlFor="new_record_location" className="text-sm font-medium  text-gray-900 w-[60px] text-start">*/}
-                                                            {/*        Location*/}
-                                                            {/*    </label>*/}
-                                                            {/*    <select*/}
-                                                            {/*        id="new_record_location"*/}
-                                                            {/*        name="new_record_location"*/}
-                                                            {/*        className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"*/}
-                                                            {/*        value={newRecordLocation}*/}
-                                                            {/*        onChange={e => {*/}
-                                                            {/*            setNewRecordLocation(e.target.value.toString())*/}
-                                                            {/*            }*/}
-                                                            {/*        }*/}
-                                                            {/*    >*/}
-                                                            {/*        {*/}
-                                                            {/*            location_options.map(e => (<option key={e.value}>{e["label"]}</option>))*/}
-                                                            {/*        }*/}
-                                                            {/*    </select>*/}
-                                                            {/*</div>*/}
 
                                                             <div className={"flex flex-row gap-x-3 items-center w-full"}>
                                                                 <label htmlFor="new_record_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>
@@ -485,6 +535,114 @@ export default function PatientHome() {
                                                                     value={newRecordMed}
                                                                     onChange={e => {
                                                                         setNewRecordMed(e.target.value)
+                                                                    }}
+                                                                    placeholder={"Enter medication here ..."}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
+                                                    <button
+                                                        type="button"
+                                                        className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
+                                                        onClick={() => recordCreate()}
+                                                    >
+                                                        Create
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => setWindowOpen(false)}
+                                                        ref={cancelButtonRef}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        mode == 'edit_record' && (
+                                            <div>
+                                                <div>
+                                                    <div className="text-center sm:mt-5">
+                                                        <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                            Edit Your Record
+                                                        </Dialog.Title>
+                                                        <div className="mt-4 flex flex-col items-start gap-y-4 ">
+                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                    <label htmlFor="mod_record_datetime" className="text-sm font-medium  text-gray-900 w-[60px] text-start">Date of Visit</label>
+                                                                    <input type="datetime-local" id="new_record_datetime"
+                                                                           value={modRecordDate}
+                                                                           onChange={e => {
+                                                                               setModRecordDate(e.target.value)
+                                                                           }
+                                                                           }
+                                                                           name="mod_record_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
+                                                                <label htmlFor="mod_record_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>
+                                                                <select
+                                                                    id="mod_record_doctor"
+                                                                    name="mod_record_doctor"
+                                                                    className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modRecordDoctor}
+                                                                    onChange={e => {
+                                                                        setModRecordDoctor(e.target.value)
+                                                                    }
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
+                                                                    }
+                                                                </select>
+                                                            </div>
+
+
+                                                            <div className={"flex flex-col gap-y-3 w-full"}>
+                                                                <label htmlFor="new_record_symptom" className="text-sm font-medium text-gray-900 w-full text-start">Symptom</label>
+                                                                <textarea
+                                                                    id="mod_record_symptom"
+                                                                    name="mod_record_symptom"
+                                                                    rows={3}
+                                                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modRecordSymptom}
+                                                                    onChange={e => {
+                                                                        setModRecordSymptom(e.target.value)
+                                                                    }}
+                                                                    placeholder={"Describe symptom here ..."}
+                                                                />
+                                                            </div>
+
+                                                            <div className={"flex flex-col gap-y-3 w-full"}>
+                                                                <label htmlFor="mod_record_diagnosis" className="text-sm font-medium text-gray-900 w-full text-start">Diagnosis</label>
+                                                                <textarea
+                                                                    id="mod_record_diagnosis"
+                                                                    name="mod_record_diagnosis"
+                                                                    rows={3}
+                                                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modRecordDiag}
+                                                                    onChange={e => {
+                                                                        setModRecordDiag(e.target.value)
+                                                                    }}
+                                                                    placeholder={"Enter diagnosis here ..."}
+                                                                />
+                                                            </div>
+
+                                                            <div className={"flex flex-col gap-y-3 w-full"}>
+                                                                <label htmlFor="mod_record_medication" className="text-sm font-medium text-gray-900 w-full text-start">Medication</label>
+                                                                <textarea
+                                                                    id="mod_record_medication"
+                                                                    name="mod_record_medication"
+                                                                    rows={3}
+                                                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                                    value={modRecordMed}
+                                                                    onChange={e => {
+                                                                        setModRecordMed(e.target.value)
                                                                     }}
                                                                     placeholder={"Enter medication here ..."}
                                                                 />
@@ -618,23 +776,23 @@ export default function PatientHome() {
                                                                 </select>
                                                             </div>
 
-                                                            <div className={"flex flex-row gap-x-3 items-center w-full"}>
-                                                                <label htmlFor="new_appointment_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>
-                                                                <select
-                                                                    id="new_appointment_doctor"
-                                                                    name="new_appointment_doctor"
-                                                                    className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                                    value={modAppDoctor}
-                                                                    onChange={e => {
-                                                                        setModAppDoctor(e.target.value)
-                                                                    }
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))
-                                                                    }
-                                                                </select>
-                                                            </div>
+                                                            {/*<div className={"flex flex-row gap-x-3 items-center w-full"}>*/}
+                                                            {/*    <label htmlFor="new_appointment_doctor" className="text-sm font-medium text-gray-900 w-[60px] text-start">Doctor</label>*/}
+                                                            {/*    <select*/}
+                                                            {/*        id="new_appointment_doctor"*/}
+                                                            {/*        name="new_appointment_doctor"*/}
+                                                            {/*        className="block w-2/3 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"*/}
+                                                            {/*        value={modAppDoctor}*/}
+                                                            {/*        onChange={e => {*/}
+                                                            {/*            setModAppDoctor(e.target.value)*/}
+                                                            {/*        }*/}
+                                                            {/*        }*/}
+                                                            {/*    >*/}
+                                                            {/*        {*/}
+                                                            {/*            doctor_options.map(e => (<option key={e.value}>{e["label"]}</option>))*/}
+                                                            {/*        }*/}
+                                                            {/*    </select>*/}
+                                                            {/*</div>*/}
 
 
 
@@ -681,6 +839,36 @@ export default function PatientHome() {
                                                         onClick={() => setWindowOpen(false)}
                                                     >
                                                         Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
+                                    {
+                                        mode == 'delete_record' && (
+                                            <div>
+                                                <div>
+                                                    <div className="mt-3 text-center sm:mt-5">
+                                                        <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                            Confirm Delete Record?
+                                                        </Dialog.Title>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-5 flex flex-row gap-x-5">
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => setWindowOpen(false)}
+                                                        ref={cancelButtonRef}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-700 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => recordDeleteConfirm()}
+                                                    >
+                                                        Confirm
                                                     </button>
                                                 </div>
                                             </div>
@@ -947,65 +1135,110 @@ export default function PatientHome() {
 
                             <div className="w-full border-t border-gray-300 shadow-lg" />
 
-                            <div className={"flex flex-col w-full border-dashed border-2 p-5"}>
-                                <div className={"flex flex-row gap-x-3"}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Date of Visit: </div>
-                                    <div className={"text-black text-[18px] font-sans"}>02/01/2022, Wednesday 12:30PM</div>
-                                </div>
-                                <div className={"flex flex-row gap-x-3"}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Doctor: </div>
-                                    <div className={"text-black text-[18px] font-sans"}>John Smith</div>
-                                </div>
-                                <div className={"flex flex-row gap-x-3"}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Location: </div>
-                                    <div className={"text-black text-[18px] font-sans"}>UMass Health Service</div>
-                                </div>
-                                <div className={"flex flex-col w-full gap-x-3 "}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Symptom</div>
-                                    <div className={"text-black text-[18px] font-sans"}>The patient presents with a complaint of recurrent headaches over the past two weeks.</div>
-                                </div>
+                            {
+                                userRecordList.map((ele, index) => {
+                                   return (
+                                       <div className={"flex flex-col w-full border-dashed border-2 p-5"} key={'record' + index.toString()}>
+                                           <div className={"flex flex-row gap-x-3"}>
+                                               <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Date of Visit: </div>
+                                               <div className={"text-black text-[18px] font-sans"}>{parse_time(ele.date_of_visit)}</div>
+                                           </div>
+                                           <div className={"flex flex-row gap-x-3"}>
+                                               <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Doctor: </div>
+                                               <div className={"text-black text-[18px] font-sans"}>{getDoctorNameByValue(ele.doctor_account_name)}</div>
+                                           </div>
+                                           {/*<div className={"flex flex-row gap-x-3"}>*/}
+                                           {/*    <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Location: </div>*/}
+                                           {/*    <div className={"text-black text-[18px] font-sans"}>{ele.}</div>*/}
+                                           {/*</div>*/}
+                                           <div className={"flex flex-col w-full gap-x-3 "}>
+                                               <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Symptom</div>
+                                               <div className={"text-black text-[18px] font-sans"}>{ele.symptom}</div>
+                                           </div>
 
-                                {/*<div className={"flex flex-col w-full gap-x-3 pt-10"}>*/}
-                                {/*    <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>History of Present Illness</div>*/}
-                                {/*    <div className={"text-black text-[18px] font-sans"}>The patient describes the headaches as bilateral, throbbing in nature, and often accompanied by sensitivity to light and sound. The headaches typically last for several hours and have been affecting the patient's daily activities.</div>*/}
-                                {/*</div>*/}
+                                           <div className={"flex flex-col w-full gap-x-3 pt-7"}>
+                                               <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Diagnosis</div>
+                                               <div className={"text-black text-[18px] font-sans"}>{ele.diagnosis}</div>
+                                           </div>
 
-                                {/*<div className={"flex flex-col w-full gap-x-3 pt-10"}>*/}
-                                {/*    <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Past Medical History</div>*/}
-                                {/*    <div className={"text-black text-[18px] font-sans w-full"}>- No history of migraines or chronic headaches. <br />*/}
-                                {/*        - No known allergies to medications.</div>*/}
-                                {/*</div>*/}
+                                           <div className={"flex flex-col w-full gap-x-3 pt-7"}>
+                                               <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Medication</div>
+                                               <div className={"text-black text-[18px] font-sans"}>
+                                                   {ele.Medication}
+                                               </div>
+                                           </div>
 
-                                <div className={"flex flex-col w-full gap-x-3 pt-7"}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Diagnosis</div>
-                                    <div className={"text-black text-[18px] font-sans"}>The patient's presentation is consistent with episodic tension-type headaches.</div>
-                                </div>
+                                           <div className={"flex flex-row justify-end gap-x-3 pt-[50px]"}>
+                                               <div
+                                                   onClick={()=>{
+                                                       recordEditClick(index)
+                                                   }}
+                                                   className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+                                               >
+                                                   Edit
+                                               </div>
+                                               <div
+                                                   onClick={() => recordDeleteClick(index)}
+                                                   className="cursor-pointer  rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                                               >
+                                                   Delete
+                                               </div>
+                                           </div>
+                                       </div>
+                                    )
+                                })
+                            }
 
-                                <div className={"flex flex-col w-full gap-x-3 pt-7"}>
-                                    <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Medication</div>
-                                    <div className={"text-black text-[18px] font-sans"}>
-                                        - Acetaminophen (Tylenol): 500mg, 1-2 tablets every 4-6 hours as needed for headache relief. <br />
-                                        - Ibuprofen (Advil): 200mg, 1-2 tablets every 4-6 hours as needed for headache relief.
-                                    </div>
-                                </div>
 
-                                <div className={"flex flex-row justify-end gap-x-3 pt-[70px]"}>
-                                    <div
-                                        // onClick={()=>{
-                                        //     setMode("reschedule")
-                                        // }}
-                                        className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-                                    >
-                                        Edit
-                                    </div>
-                                    <div
-                                        // onClick={editButtonClick}
-                                        className="cursor-pointer  rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
-                                    >
-                                        Delete
-                                    </div>
-                                </div>
-                            </div>
+
+                            {/*<div className={"flex flex-col w-full border-dashed border-2 p-5"}>*/}
+                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Date of Visit: </div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>02/01/2022, Wednesday 12:30PM</div>*/}
+                            {/*    </div>*/}
+                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Doctor: </div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>John Smith</div>*/}
+                            {/*    </div>*/}
+                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Location: </div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>UMass Health Service</div>*/}
+                            {/*    </div>*/}
+                            {/*    <div className={"flex flex-col w-full gap-x-3 "}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Symptom</div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>The patient presents with a complaint of recurrent headaches over the past two weeks.</div>*/}
+                            {/*    </div>*/}
+
+                            {/*    <div className={"flex flex-col w-full gap-x-3 pt-7"}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Diagnosis</div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>The patient's presentation is consistent with episodic tension-type headaches.</div>*/}
+                            {/*    </div>*/}
+
+                            {/*    <div className={"flex flex-col w-full gap-x-3 pt-7"}>*/}
+                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Medication</div>*/}
+                            {/*        <div className={"text-black text-[18px] font-sans"}>*/}
+                            {/*            - Acetaminophen (Tylenol): 500mg, 1-2 tablets every 4-6 hours as needed for headache relief. <br />*/}
+                            {/*            - Ibuprofen (Advil): 200mg, 1-2 tablets every 4-6 hours as needed for headache relief.*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+
+                            {/*    <div className={"flex flex-row justify-end gap-x-3 pt-[70px]"}>*/}
+                            {/*        <div*/}
+                            {/*            // onClick={()=>{*/}
+                            {/*            //     setMode("reschedule")*/}
+                            {/*            // }}*/}
+                            {/*            className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"*/}
+                            {/*        >*/}
+                            {/*            Edit*/}
+                            {/*        </div>*/}
+                            {/*        <div*/}
+                            {/*            // onClick={editButtonClick}*/}
+                            {/*            className="cursor-pointer  rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"*/}
+                            {/*        >*/}
+                            {/*            Delete*/}
+                            {/*        </div>*/}
+                            {/*    </div>*/}
+                            {/*</div>*/}
 
                         </div>
                     </div>
