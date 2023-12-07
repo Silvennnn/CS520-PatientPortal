@@ -295,7 +295,7 @@ def update_medical_record_by_uuid(
     )
     return parse_medical_record(db=db, medical_record=updated_medical_record)
 
-@app.delete("/meicalRecord/deleteMedicalRecordByUUID/")
+@app.delete("/medicalRecord/deleteMedicalRecordByUUID/")
 def delete_medical_record_by_uuid(
         token: str,
         medical_record_uuid: UUID,
