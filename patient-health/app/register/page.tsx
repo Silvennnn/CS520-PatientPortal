@@ -6,35 +6,46 @@ import {User} from "@/api/profile";
 export default function Registry() {
 
     const account_type_option = [
-        { value: "patient", label: "Patient Account"},
-        { value: "doctor", label: "Doctor Account"},
+        { value: 0, label: "Patient Account"},
+        { value: 1, label: "Doctor Account"},
     ]
 
+    const getAccountTypeNumByLabel = (label) => {
+        const account = account_type_option.find(account => account.label === label);
+        return account.value
+    }
+
     const [address, setAddress] = useState('');
-    const [email, setEmail] = useState('');
+    const [accountName, setAccountName] = useState('');
     const [password, setPassword] = useState('');
+    const [password2, setPassword2] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [city, setCity] = useState('');
-    const [state, setState] = useState('');
-    const [zip, setZip] = useState('');
+    const [phone, setPhone] = useState('');
+    const [gender, setGender] = useState('male')
+    const [dateOfBirth, setDateOfBirth] = useState('')
 
 
-    const [accountType, setAccountType] = useState(account_type_option[0]["value"])
+    const [accountType, setAccountType] = useState(account_type_option[0].label)
 
+    const buttonClick = () => {
+        console.log("123")
+    }
     const submitButtonClick = async () => {
+        console.log(accountType)
         let data = {
-              "account_name": '',
+              "account_name": accountName,
               "password": password,
-              "account_type": accountType,
+              "account_type": getAccountTypeNumByLabel(accountType),
               "first_name": firstName,
               "last_name": lastName,
               "middle_name": '',
-              "phone_number": '',
-              "date_of_birth": '',
-              "gender": '',
+              "phone_number": phone,
+              "date_of_birth": dateOfBirth,
+              "gender": gender,
               "address": address,
         }
+        console.log(data)
         try{
             const response = await registerUser(data);
             console.log(response);
@@ -123,7 +134,7 @@ export default function Registry() {
                                                 }}
                                             >
                                                 {
-                                                    account_type_option.map(e => (<option>{e["label"]}</option>))
+                                                    account_type_option.map(e => (<option key={"account_type" + e.value}>{e["label"]}</option>))
                                                 }
                                             </select>
                                         </div>
@@ -142,15 +153,19 @@ export default function Registry() {
                                     <div className="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
                                         <div className="sm:col-span-4">
                                             <label htmlFor="name" className="block text-sm font-medium leading-6 text-gray-900">
-                                                Email Address
+                                               Account Name
                                             </label>
                                             <div className="mt-2">
                                                 <div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
                                                     <input
-                                                        id="email"
-                                                        name="email"
-                                                        type="email"
-                                                        autoComplete="email"
+                                                        id="accountName"
+                                                        name="accountName"
+                                                        type="input"
+                                                        value={accountName}
+                                                        onChange={e => {
+                                                                setAccountName(e.target.value)
+                                                            }
+                                                        }
                                                         className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                     />
                                                 </div>
@@ -167,6 +182,11 @@ export default function Registry() {
                                                         id="psw"
                                                         name="psw"
                                                         type="password"
+                                                        value={password}
+                                                        onChange={e => {
+                                                            setPassword(e.target.value)
+                                                        }
+                                                        }
                                                         className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                     />
                                                 </div>
@@ -183,6 +203,11 @@ export default function Registry() {
                                                         id="psw2"
                                                         name="psw2"
                                                         type="password"
+                                                        value={password2}
+                                                        onChange={e => {
+                                                            setPassword2(e.target.value)
+                                                        }
+                                                        }
                                                         className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                     />
                                                 </div>
@@ -206,7 +231,11 @@ export default function Registry() {
                                                     type="text"
                                                     name="first-name"
                                                     id="first-name"
-                                                    autoComplete="given-name"
+                                                    value={firstName}
+                                                    onChange={e => {
+                                                        setFirstName(e.target.value)
+                                                    }
+                                                    }
                                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                 />
                                             </div>
@@ -221,7 +250,11 @@ export default function Registry() {
                                                     type="text"
                                                     name="last-name"
                                                     id="last-name"
-                                                    autoComplete="family-name"
+                                                    value={lastName}
+                                                    onChange={e => {
+                                                        setLastName(e.target.value)
+                                                    }
+                                                    }
                                                     className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                 />
                                             </div>
@@ -229,89 +262,87 @@ export default function Registry() {
 
 
                                         <div className="sm:col-span-3">
-                                            <label htmlFor="country" className="block text-sm font-medium leading-6 text-gray-900">
-                                                Country
+                                            <label htmlFor="gender" className="block text-sm font-medium leading-6 text-gray-900">
+                                                Gender
                                             </label>
                                             <div className="mt-2">
                                                 <select
-                                                    id="country"
-                                                    name="country"
-                                                    autoComplete="country-name"
+                                                    id="gender"
+                                                    name="gender"
+                                                    value={gender}
+                                                    onChange={e => {
+                                                        setGender(e.target.value)
+                                                    }
+                                                    }
                                                     className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
                                                 >
-                                                    <option>United States</option>
-                                                    <option>Canada</option>
-                                                    <option>Mexico</option>
+                                                    <option key={'male'} value={'male'}>Male</option>
+                                                    <option key={'female'} value={'female'}>Female</option>
+                                                    <option key={'other'} value={'other'}>other</option>
                                                 </select>
                                             </div>
                                         </div>
 
+                                        <div className="sm:col-span-3">
+                                            <label htmlFor="dob" className="block text-sm font-medium leading-6 text-gray-900">
+                                                Date of Birth
+                                            </label>
+                                            <div className="mt-2">
+                                                <input type="date" id="dob"
+                                                value={dateOfBirth}
+                                                onChange={e => {
+                                                setDateOfBirth(e.target.value.toString())
+                                             }
+                                            }
+                                                name="new_appointment_datetime" className="pl-3 block w-2/3 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"/>
+
+                                            </div>
+                                        </div>
+
                                         <div className="col-span-full">
-                                            <label htmlFor="street-address" className="block text-sm font-medium leading-6 text-gray-900">
-                                                Street address
+                                            <label htmlFor="phone" className="block text-sm font-medium leading-6 text-gray-900">
+                                                Contact Number
                                             </label>
                                             <div className="mt-2">
                                                 <input
                                                     type="text"
-                                                    name="street-address"
-                                                    id="street-address"
-                                                    autoComplete="street-address"
+                                                    name="phone"
+                                                    id="phone"
+                                                    value={phone}
+                                                    onChange={e => {
+                                                    setPhone(e.target.value)}
+                                                    }
+                                                    className="pl-2 block w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-full">
+                                            <label htmlFor="address" className="block text-sm font-medium leading-6 text-gray-900">
+                                                Address
+                                            </label>
+                                            <div className="mt-2">
+                                                <input
+                                                    type="text"
+                                                    name="address"
+                                                    id="address"
+                                                    value={address}
+                                                    onChange={e => {
+                                                    setAddress(e.target.value)}
+                                                    }
                                                     className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="sm:col-span-2 sm:col-start-1">
-                                            <label htmlFor="city" className="block text-sm font-medium leading-6 text-gray-900">
-                                                City
-                                            </label>
-                                            <div className="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="city"
-                                                    id="city"
-                                                    autoComplete="address-level2"
-                                                    className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="sm:col-span-2">
-                                            <label htmlFor="region" className="block text-sm font-medium leading-6 text-gray-900">
-                                                State / Province
-                                            </label>
-                                            <div className="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="region"
-                                                    id="region"
-                                                    autoComplete="address-level1"
-                                                    className="pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="sm:col-span-2">
-                                            <label htmlFor="postal-code" className="block text-sm font-medium leading-6 text-gray-900">
-                                                ZIP / Postal code
-                                            </label>
-                                            <div className="mt-2">
-                                                <input
-                                                    type="text"
-                                                    name="postal-code"
-                                                    id="postal-code"
-                                                    autoComplete="postal-code"
-                                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                                                />
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mt-6 flex items-center justify-end gap-x-6">
                                 <button
-                                    type="submit"
+                                    type="button"
+                                    onClick={() => submitButtonClick()}
                                     className="cursor-pointer rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
                                 >
                                     Submit
