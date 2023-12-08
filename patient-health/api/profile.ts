@@ -46,7 +46,6 @@ export async function getUserProfileByToken(token: string){
 }
 
 export async function updateUserProfile(token: string, address: string, phoneNumber: string){
-    console.log("1111")
     const response = await fetch(baseURL + `/user/updateUserProfile/?token=${token}`,{
         method: "POST",
         headers: {
