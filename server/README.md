@@ -7,21 +7,24 @@
 
 ## Run
 
-### Using pre-configured py file
-`python main.py`
-
 ### Using terminal
-`uvicorn server.main:app --reload --log-config log_config.ini`
+
+Make sure you at the root of the application and run`uvicorn server.main:app --reload --log-config log_config.ini`
+(run server applocation required `.env` file in the root)
 
 ## Tutorial Link
 
 [API_docs] (http://127.0.0.1:8000/docs)
 
-## Envoriment
+## Datebase
 
 Make sure that `.env` file is in the root 
 
+## Test
+### Run pytest
 
+Make sure you at the root of the application and run `pytest -s server/test/ -W ignore::DeprecationWarning`
+(run pytest required `.env` file in the root)
 
 
 [FastAPI](https://fastapi.tiangolo.com/tutorial/)

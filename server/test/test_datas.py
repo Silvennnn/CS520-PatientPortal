@@ -71,5 +71,27 @@ update_appointment_1_1 = {
     "location": "home",
     "message": "please come",
 }
+medical_record_1_1 = {
+    "symptom": "test",
+    "diagnosis": "test",
+    "Medication": "test",
+    "date_of_visit": "2023-12-07T10:00",
+    "doctor_account_name": "test_doctor_1",
+    "patient_account_name": "test_patient_1",
+}
+medical_record_2_2 = {
+    "symptom": "test",
+    "diagnosis": "test",
+    "Medication": "test",
+    "date_of_visit": "2023-12-07T12:00",
+    "doctor_account_name": "test_doctor_2",
+    "patient_account_name": "test_patient_2",
+}
+update_medical_record_1_1 = {
+    "symptom": "tested",
+    "diagnosis": "tested",
+    "Medication": "tested",
+}
 appointments = [appointment_1_1, appointment_2_2]
+medical_records = [medical_record_1_1, medical_record_2_2]
 test_users = [test_patient_1, test_patient_2, test_doctor_1, test_doctor_2]
