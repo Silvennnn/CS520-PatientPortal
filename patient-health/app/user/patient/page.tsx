@@ -16,7 +16,12 @@ import {
     updateAppointmentByUUID
 } from "@/api/appointment";
 import {parse_time} from "@/app/tools";
-import {createMedicalRecord, deleteMedicalRecordByUUID, getMedicalByToken} from "@/api/record";
+import {
+    createMedicalRecord,
+    deleteMedicalRecordByUUID,
+    getMedicalByToken,
+    updateMedicalRecordByUUID
+} from "@/api/record";
 
 export default function PatientHome() {
     const [userProfile, setUserProfile] = useState({
@@ -42,11 +47,10 @@ export default function PatientHome() {
     useEffect(() => {
         setMode("loading")
         setWindowOpen(true)
-
+        window.scrollTo({top:0, left:0, behavior: "smooth"})
         app_init()
         let token = getCookie("access_token")
         setAccessToken(token)
-
         // load profile
         const getUserProfileByToken = async (token: string) => {
             const response = await fetch(baseURL + `/user/getMe?token=${token}`, {
@@ -126,8 +130,8 @@ export default function PatientHome() {
         { value: "doctor_3", label: "John Smith"},
         { value: "doctor_4", label: "JR Smith"},
         { value: "doctor_5", label: "Kevin Zhang"},
-        { value: "doctor_2", label: "Kevin Zhang"},
-        { value: "doctor_1", label: "Scissors Johnson"}
+        { value: "doctor_2", label: "Scissors Johnson"},
+        { value: "doctor_1", label: "Paper Johnson"}
     ]
 
     const getDoctorNameByValue = (value) => {
@@ -145,19 +149,18 @@ export default function PatientHome() {
         setMode('loading')
         setWindowOpen(true)
         try {
-            let response = await updateUserProfile(accessToken, userProfileAddress, userContact)
-            if (response.status === 200) {
-                const data = response.json().then(
-                    e => {
-                        setUserProfile(e.address)
-                        setUserContact(e.phone_number)
-                        setIsEditing(false)
-                        setWindowOpen(false)
-                    }
-                )
-            }
+            let response = await updateUserProfile(accessToken, userProfileAddress, userContact).then(
+                e => {
+                    setUserProfile(e.address)
+                    setUserContact(e.phone_number)
+                    setIsEditing(false)
+                    setWindowOpen(true)
+                    setMode('success')
+                }
+            )
         } catch (error) {
             console.error('Error during update profile:', error);
+            setMode("error")
         }
     }
 
@@ -198,11 +201,12 @@ export default function PatientHome() {
             let response = await createAppointment(accessToken, data).then(
                 e => {
                     setWindowOpen(false)
-                    window.location.reload()
+                    // window.location.reload()
                 }
             )
         } catch (error) {
             console.error('Error during update profile:', error);
+            setMode("error")
         }
     }
 
@@ -220,12 +224,13 @@ export default function PatientHome() {
         try {
             let response = await cancelAppointmentByUUID(accessToken, target_app_uuid).then(
                 e => {
-                    setWindowOpen(false)
-                    window.location.reload()
+                    setWindowOpen(true)
+                    setMode('success')
                 }
             )
         } catch (error) {
             console.error('Error during appointment cancellation:', error);
+            setMode("error")
         }
     }
 
@@ -249,12 +254,13 @@ export default function PatientHome() {
         try {
             let response = await updateAppointmentByUUID(accessToken, target_app_uuid, modAppTime, modAppLocation, modAppMessage).then(
                 e => {
-                    setWindowOpen(false)
-                    window.location.reload()
+                    setWindowOpen(true)
+                    setMode('success')
                 }
             )
         } catch (error) {
             console.error('Error during appointment cancellation:', error);
+            setMode("error")
         }
     }
 
@@ -285,12 +291,35 @@ export default function PatientHome() {
         try {
             let response = await createMedicalRecord(accessToken, data).then(
                 e => {
-                    setWindowOpen(false)
-                    window.location.reload()
+                    setWindowOpen(true)
+                    setMode('success')
                 }
             )
         } catch (error) {
             console.error('Error during record create:', error);
+            setMode("error")
+        }
+    }
+
+    const recordUpdate = async () => {
+        // console.log(newRecordDoctor)
+        const record_uuid = userRecordList[selectRecordIndex].medical_record_uuid
+        const data = {
+            "symptom": modRecordSymptom,
+            "diagnosis": modRecordDiag,
+            "Medication": modRecordMed,
+        }
+        // console.log(data)
+        try {
+            let response = await updateMedicalRecordByUUID(accessToken, record_uuid, data).then(
+                e => {
+                    setWindowOpen(true)
+                    setMode('success')
+                }
+            )
+        } catch (error) {
+            console.error('Error during record create:', error);
+            setMode("error")
         }
     }
 
@@ -316,17 +345,20 @@ export default function PatientHome() {
         try {
             let response = await deleteMedicalRecordByUUID(accessToken, record_id).then(
                 e => {
-                    setWindowOpen(false)
-                    window.location.reload()
+                    setWindowOpen(true)
+                    setMode('success')
                 }
             )
         } catch (error) {
             console.error('Error during record create:', error);
+            setMode("error")
         }
     }
 
 
-
+    const successWindowButtonClick = () => {
+        window.location.reload()
+    }
 
     return (
         <>
@@ -654,9 +686,9 @@ export default function PatientHome() {
                                                     <button
                                                         type="button"
                                                         className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:col-start-2"
-                                                        onClick={() => recordCreate()}
+                                                        onClick={() => recordUpdate()}
                                                     >
-                                                        Create
+                                                        Update
                                                     </button>
                                                     <button
                                                         type="button"
@@ -874,6 +906,26 @@ export default function PatientHome() {
                                             </div>
                                         )
                                     }
+                                    {
+                                        mode == 'success' && (
+                                            <div>
+                                                <div className="mt-3 text-center sm:mt-5">
+                                                    <Dialog.Title className="text-base font-semibold text-gray-900">
+                                                        Success!
+                                                    </Dialog.Title>
+                                                </div>
+                                                <div className="mt-5 flex flex-row justfy-center w-full">
+                                                    <button
+                                                        type="button"
+                                                        className="mt-3 w-full justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-teal-700 sm:col-start-1 sm:mt-0"
+                                                        onClick={() => successWindowButtonClick()}
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    }
 
                                 </Dialog.Panel>
                             </Transition.Child>
@@ -914,7 +966,7 @@ export default function PatientHome() {
                                 src="../pablo-summer.png"
                             />
                         </div>
-                        <div className={"absolute right-0 bottom-[80px] w-[50%]"}>
+                        <div className={"absolute right-0 bottom-[80px] w-auto"}>
                             <div className={"pl-[50px] flex flex-col"}>
                                 <div className={"tracking-tight text-[30px] font-mono font-semibold"}>
                                     Welcome Back, <span className={"text-[33px] font-mono font-semibold text-[#FFCBA5] underline decoration-solid"}>{userProfile.first_name + ' ' + userProfile.last_name}</span> <br />How are you feeling today?
@@ -1188,57 +1240,6 @@ export default function PatientHome() {
                                     )
                                 })
                             }
-
-
-
-                            {/*<div className={"flex flex-col w-full border-dashed border-2 p-5"}>*/}
-                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Date of Visit: </div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>02/01/2022, Wednesday 12:30PM</div>*/}
-                            {/*    </div>*/}
-                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Doctor: </div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>John Smith</div>*/}
-                            {/*    </div>*/}
-                            {/*    <div className={"flex flex-row gap-x-3"}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Location: </div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>UMass Health Service</div>*/}
-                            {/*    </div>*/}
-                            {/*    <div className={"flex flex-col w-full gap-x-3 "}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-[130px]"}>Symptom</div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>The patient presents with a complaint of recurrent headaches over the past two weeks.</div>*/}
-                            {/*    </div>*/}
-
-                            {/*    <div className={"flex flex-col w-full gap-x-3 pt-7"}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Diagnosis</div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>The patient's presentation is consistent with episodic tension-type headaches.</div>*/}
-                            {/*    </div>*/}
-
-                            {/*    <div className={"flex flex-col w-full gap-x-3 pt-7"}>*/}
-                            {/*        <div className={"font-bold text-teal-700 text-[18px] font-sans w-auto"}>Medication</div>*/}
-                            {/*        <div className={"text-black text-[18px] font-sans"}>*/}
-                            {/*            - Acetaminophen (Tylenol): 500mg, 1-2 tablets every 4-6 hours as needed for headache relief. <br />*/}
-                            {/*            - Ibuprofen (Advil): 200mg, 1-2 tablets every 4-6 hours as needed for headache relief.*/}
-                            {/*        </div>*/}
-                            {/*    </div>*/}
-
-                            {/*    <div className={"flex flex-row justify-end gap-x-3 pt-[70px]"}>*/}
-                            {/*        <div*/}
-                            {/*            // onClick={()=>{*/}
-                            {/*            //     setMode("reschedule")*/}
-                            {/*            // }}*/}
-                            {/*            className="cursor-pointer  rounded-md bg-amber-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-amber-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"*/}
-                            {/*        >*/}
-                            {/*            Edit*/}
-                            {/*        </div>*/}
-                            {/*        <div*/}
-                            {/*            // onClick={editButtonClick}*/}
-                            {/*            className="cursor-pointer  rounded-md bg-red-600 px-3.5 py-2.5 text-md font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"*/}
-                            {/*        >*/}
-                            {/*            Delete*/}
-                            {/*        </div>*/}
-                            {/*    </div>*/}
-                            {/*</div>*/}
 
                         </div>
                     </div>
