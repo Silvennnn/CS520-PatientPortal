@@ -4,7 +4,7 @@ import {logout} from "@/api/log_in";
 import {getCookie} from "typescript-cookie";
 import app_init from "@/app/initialize";
 import {baseURL, getUserByAccountName} from "@/api/profile";
-import {parse_time} from "@/app/tools";
+import {parse_time, sortAppointmentByTime, sortRecordsByTime} from "@/app/tools";
 import {cancelAppointmentByUUID, completeAppointmentByUUID, updateAppointmentByUUID} from "@/api/appointment";
 import {Dialog, Transition} from "@headlessui/react";
 import {MutatingDots} from "react-loader-spinner";
@@ -120,8 +120,8 @@ export default function DoctorHome() {
 
         getAppointmentByToken(token).then(r => {
             console.log("Appointment loaded!")
-            console.log(r)
-            setUserAppointmentList(r)
+            const sorted_app = sortAppointmentByTime(r)
+            setUserAppointmentList(sorted_app)
         })
 
         setWindowOpen(false)
@@ -273,7 +273,8 @@ export default function DoctorHome() {
 
             let response2 = await getMedicalByAccountName(accessToken, target_patient_account_username).then(
                 e => {
-                    setTargetPatientRecords(e)
+                    const sorted_record = sortRecordsByTime(e)
+                    setTargetPatientRecords(sorted_record)
                 }
             )
         } catch (error) {

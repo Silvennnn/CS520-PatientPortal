@@ -13,3 +13,27 @@ export function parse_time(datetime){
 
     return final_time
 }
+
+export function sortAppointmentByTime(app_lst) {
+    function compareDates(a, b) {
+        const dateA = new Date(a.datetime);
+        const dateB = new Date(b.datetime);
+
+        // @ts-ignore
+        return dateA - dateB;
+    }
+
+    return app_lst.sort(compareDates)
+}
+
+export function sortRecordsByTime(records_lst) {
+    function compareDates(a, b) {
+        const dateA = new Date(a.date_of_visit);
+        const dateB = new Date(b.date_of_visit);
+
+        // @ts-ignore
+        return dateA - dateB;
+    }
+
+    return records_lst.sort(compareDates)
+}

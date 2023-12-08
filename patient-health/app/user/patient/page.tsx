@@ -15,7 +15,7 @@ import {
     getAppointmentByToken,
     updateAppointmentByUUID
 } from "@/api/appointment";
-import {parse_time} from "@/app/tools";
+import {parse_time, sortAppointmentByTime, sortRecordsByTime} from "@/app/tools";
 import {
     createMedicalRecord,
     deleteMedicalRecordByUUID,
@@ -96,15 +96,17 @@ export default function PatientHome() {
 
         getAppointmentByToken(token).then(r => {
             console.log("Appointment loaded!")
-            // console.log(r)
-            setUserAppointmentList(r)
+            console.log(r)
+            const sorted_app = sortAppointmentByTime(r)
+            setUserAppointmentList(sorted_app)
         })
 
 
         getMedicalByToken(token).then(r => {
             console.log("Record loaded!")
-            // console.log(r)
-            setUserRecordList(r)
+            console.log(r)
+            const sorted_record = sortRecordsByTime(r)
+            setUserRecordList(sorted_record)
         })
 
         setWindowOpen(false)
