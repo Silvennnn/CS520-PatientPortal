@@ -136,6 +136,14 @@ def update_user_profile(
     return parse_obj_as(UserProfileSchemas, updated_user)
 
 
+@app.delete("/user/deleteUserByUUID/")
+def delete_user_by_uuid(
+    user_uuid: UUID,
+    db: Session = Depends(get_db),
+):
+    return fastapi_user_crud.delete_user_by_uuid(db=db, user_uuid=user_uuid)
+
+
 @app.post("/appointment/createAppointment/", response_model=ReturnAppointmentSchemas)
 def create_Appointment(
     token: str,

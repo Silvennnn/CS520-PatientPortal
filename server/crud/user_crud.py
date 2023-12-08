@@ -148,3 +148,17 @@ class UserCRUD:
             # raise utils.DatabaseCommitError(e)
         finally:
             return updated_user
+
+    def delete_user_by_uuid(self, db: Session, user_uuid: UUID):
+        stmt = db.query(self.model).filter(User.user_uuid == user_uuid)
+        current_user = stmt.first()
+        stmt.delete()
+        result_entry = None
+        try:
+            db.commit()
+            result_entry = stmt.first()
+        except Exception as e:
+            print(e)
+            # raise utils.DatabaseCommitError(e)
+        finally:
+            return result_entry

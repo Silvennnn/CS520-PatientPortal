@@ -48,13 +48,13 @@ class AppointmentCRUD:
         patient = get_by_account_name(
             db=db, account_name=create_appointment_schemas.patient_account_name
         )
-        if patient is None:
+        if patient is None or patient.account_type != 0:
             raise HTTPException(status_code=401, detail="No such patient account name")
         patient_uuid = patient.user_uuid
         doctor = get_by_account_name(
             db=db, account_name=create_appointment_schemas.doctor_account_name
         )
-        if doctor is None:
+        if doctor is None or doctor.account_type != 1:
             raise HTTPException(status_code=401, detail="No such doctor account name")
         doctor_uuid = doctor.user_uuid
         create_appointment = create_appointment_schemas.__dict__
