@@ -17,6 +17,7 @@ export interface User {
 }
 
 export async function registerUser(user: User){
+    console.log(user);
     const response = await fetch(baseURL + "/user/createUser/", {
         method: "POST",
         headers: {

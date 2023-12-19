@@ -10,22 +10,6 @@ export interface User_Form {
 }
 
 
-
-// export async function login(form: User_Form){
-//     const response = await fetch(baseURL + "/login/access-token",{
-//         method: "POST",
-//         headers: {
-//             "Content-Type": "application/json"
-//         },
-//         body:  JSON.stringify(form)
-//     }
-//     );
-//     if(response.ok){
-//         const dt = response.json();
-//         return dt
-//     }
-// }
-
 export async function login_call(form) {
     const response = await fetch(baseURL + "/login/access-token/", {
         method: 'POST',
